@@ -20,7 +20,10 @@ import {
   ShieldCheck,
   ChevronRight,
   LogOut,
-  Layers
+  Layers,
+  Home,
+  PhoneCall,
+  Globe
 } from 'lucide-react';
 
 export interface NavItem {
@@ -30,6 +33,13 @@ export interface NavItem {
 }
 
 export const ROLE_MODULES: Record<RoleType, NavItem[]> = {
+  pagina_web: [
+    { id: 'inicio', label: 'Inicio', icon: <Home className="w-5 h-5" /> },
+    { id: 'servicios', label: 'Servicios', icon: <Grid className="w-5 h-5" /> },
+    { id: 'nosotros', label: 'Nosotros', icon: <ShieldCheck className="w-5 h-5" /> },
+    { id: 'proyectos', label: 'Galería de Obras', icon: <Camera className="w-5 h-5" /> },
+    { id: 'contacto', label: 'Contacto & Cotizar', icon: <PhoneCall className="w-5 h-5" /> }
+  ],
   cliente: [
     { id: 'cuestionario', label: 'Cotizar en Línea', icon: <Calculator className="w-5 h-5" /> },
     { id: 'estatus', label: 'Estatus de Proyecto', icon: <Search className="w-5 h-5" /> },

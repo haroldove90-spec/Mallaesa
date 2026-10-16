@@ -5,6 +5,10 @@ import { DataManagementModal } from './DataManagementModal';
 import { Download, LogOut, Database, UserCheck, Smartphone } from 'lucide-react';
 
 const ROLE_LABELS: Record<string, { title: string; badge: string }> = {
+  pagina_web: {
+    title: 'Sitio Web Oficial www.mallaesa.com',
+    badge: 'Página Web'
+  },
   cliente: {
     title: 'Portal de Clientes',
     badge: 'Público'

@@ -4,6 +4,7 @@ import { SplashScreen } from './components/SplashScreen';
 import { RoleSelector } from './components/RoleSelector';
 import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
+import { WebsitePortal } from './views/website/WebsitePortal';
 import { ClientPortal } from './views/client/ClientPortal';
 import { DirectorDashboard } from './views/director/DirectorDashboard';
 import { SalesPortal } from './views/sales/SalesPortal';
@@ -15,19 +16,20 @@ function DashboardContent() {
   const [showSplash, setShowSplash] = useState(true);
 
   // Current active module inside the selected role
-  const [currentModule, setCurrentModule] = useState<string>('cuestionario');
+  const [currentModule, setCurrentModule] = useState<string>('inicio');
 
   // When role changes, set default module
   useEffect(() => {
     if (activeRole) {
       const defaultModules: Record<string, string> = {
+        pagina_web: 'inicio',
         cliente: 'cuestionario',
         director: 'kpis',
         ventas: 'solicitudes',
         operaciones: 'ordenes',
         administracion: 'cuentas'
       };
-      setCurrentModule(defaultModules[activeRole] || 'cuestionario');
+      setCurrentModule(defaultModules[activeRole] || 'inicio');
     }
   }, [activeRole]);
 
@@ -57,6 +59,12 @@ function DashboardContent() {
 
             {/* Área de Trabajo de Alto Rendimiento (Sin pestañas duplicadas) */}
             <main className="flex-1 p-3.5 sm:p-6 md:p-8 overflow-y-auto">
+              {activeRole === 'pagina_web' && (
+                <WebsitePortal
+                  activeModule={currentModule}
+                  onNavigateModule={setCurrentModule}
+                />
+              )}
               {activeRole === 'cliente' && (
                 <ClientPortal
                   activeModule={currentModule}

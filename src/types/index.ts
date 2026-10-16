@@ -1,4 +1,4 @@
-export type RoleType = 'cliente' | 'director' | 'ventas' | 'operaciones' | 'administracion';
+export type RoleType = 'pagina_web' | 'cliente' | 'director' | 'ventas' | 'operaciones' | 'administracion';
 
 export interface RoleConfig {
   id: RoleType;

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useMallaesa } from '../../context/MallaesaContext';
 import { ServiceType, TerrainType } from '../../types';
+import { calculateIntelligentQuote, exportQuoteToPdf, IntelligentQuoteResult } from '../../utils/quoteCalculator';
 import confetti from 'canvas-confetti';
 import {
   Send,
@@ -20,7 +21,13 @@ import {
   Clock,
   Download,
   PenTool,
-  Check
+  Check,
+  Printer,
+  Sparkles,
+  Calculator,
+  PlusCircle,
+  FileCheck2,
+  Info
 } from 'lucide-react';
 
 const SERVICE_OPTIONS: { id: ServiceType; label: string; image: string; desc: string }[] = [
@@ -73,11 +80,10 @@ export const ClientPortal: React.FC<{
   onNavigateModule?: (module: string) => void;
 }> = ({ activeModule, onNavigateModule }) => {
   const {
-    submitClientRequest,
+    saveIntelligentQuote,
     projects,
     formalQuotes,
-    clientApproveQuote,
-    workOrders
+    clientApproveQuote
   } = useMallaesa();
 
   // Form states
@@ -92,7 +98,16 @@ export const ClientPortal: React.FC<{
   const [terrainType, setTerrainType] = useState<TerrainType>('tierra');
   const [notes, setNotes] = useState('');
   const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState('');
-  const [submittedFolio, setSubmittedFolio] = useState<string | null>(null);
+
+  // Optional Add-ons for Intelligent calculation
+  const [addConcertinaTop, setAddConcertinaTop] = useState(false);
+  const [addBarbedWireTop, setAddBarbedWireTop] = useState(false);
+  const [addGate, setAddGate] = useState(false);
+  const [addPedestrianGate, setAddPedestrianGate] = useState(false);
+  const [addPrivacyTape, setAddPrivacyTape] = useState(false);
+
+  // Generated Intelligent Quote result state
+  const [intelligentResult, setIntelligentResult] = useState<IntelligentQuoteResult | null>(null);
 
   // Search Folio state
   const [searchFolio, setSearchFolio] = useState('');
@@ -102,31 +117,82 @@ export const ClientPortal: React.FC<{
   const [clientSignatureInput, setClientSignatureInput] = useState('');
   const [isApproving, setIsApproving] = useState(false);
 
-  const handleSubmitRequest = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!clientName || !clientPhone) {
-      alert('Por favor ingresa tu nombre y teléfono de contacto.');
-      return;
-    }
-
-    const folio = submitClientRequest({
-      clientName,
+  // Live dynamic price preview computation
+  const liveQuote = useMemo(() => {
+    return calculateIntelligentQuote({
+      clientName: clientName || 'Prospecto',
       clientPhone,
-      clientEmail: clientEmail || `${clientName.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
-      projectAddress: projectAddress || 'Domicilio en confirmación',
+      clientEmail,
+      projectAddress,
       city,
       serviceType,
       linearMeters: Number(linearMeters) || 50,
       heightMeters: Number(heightMeters) || 2.0,
       terrainType,
-      notes,
-      photoUrl: uploadedPhotoUrl || undefined
+      addConcertinaTop,
+      addBarbedWireTop,
+      addGate,
+      addPedestrianGate,
+      addPrivacyTape,
+      notes
+    });
+  }, [
+    clientName,
+    clientPhone,
+    clientEmail,
+    projectAddress,
+    city,
+    serviceType,
+    linearMeters,
+    heightMeters,
+    terrainType,
+    addConcertinaTop,
+    addBarbedWireTop,
+    addGate,
+    addPedestrianGate,
+    addPrivacyTape,
+    notes
+  ]);
+
+  const handleGenerateIntelligentQuote = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!clientName || !clientPhone) {
+      alert('Por favor ingresa tu nombre y teléfono para generar la cotización formal con membrete.');
+      return;
+    }
+
+    const result = calculateIntelligentQuote({
+      clientName,
+      clientPhone,
+      clientEmail: clientEmail || `${clientName.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
+      projectAddress: projectAddress || 'Ubicación en confirmación',
+      city,
+      serviceType,
+      linearMeters: Number(linearMeters) || 50,
+      heightMeters: Number(heightMeters) || 2.0,
+      terrainType,
+      addConcertinaTop,
+      addBarbedWireTop,
+      addGate,
+      addPedestrianGate,
+      addPrivacyTape,
+      notes
     });
 
-    setSubmittedFolio(folio);
+    // Save into Mallaesa system context
+    saveIntelligentQuote(result);
+    setIntelligentResult(result);
+
     try {
-      confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+      confetti({ particleCount: 90, spread: 75, origin: { y: 0.55 } });
     } catch {}
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleExportPdf = () => {
+    if (!intelligentResult) return;
+    exportQuoteToPdf(intelligentResult);
   };
 
   const handleSearchProject = (folioToFind?: string) => {
@@ -160,7 +226,7 @@ export const ClientPortal: React.FC<{
   return (
     <div className="space-y-6">
       {/* ========================================================
-          MÓDULO 1: CUESTIONARIO INTERACTIVO DE COTIZACIÓN
+          MÓDULO 1: COTIZADOR INTELIGENTE CON PRECIO EXACTO
          ======================================================== */}
       {activeModule === 'cuestionario' && (
         <div className="max-w-4xl mx-auto space-y-6">
@@ -169,64 +235,197 @@ export const ClientPortal: React.FC<{
             <div className="flex items-start justify-between flex-wrap gap-4">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#898A82]">
-                  MALLAESA • Seguridad Perimetral
+                  MALLAESA • Cotizador Inteligente
                 </span>
                 <h1 className="text-2xl font-bold text-black mt-1">
-                  Cotizador Interactivo de Cercados
+                  Cotizador Inteligente con Precio Exacto en Vivo
                 </h1>
                 <p className="text-sm text-stone-600 mt-1 max-w-2xl">
-                  Ingresa las medidas y especificaciones de tu terreno. Nuestro sistema comercial procesará tus datos y calculará el presupuesto oficial con materiales y mano de obra.
+                  Configura las medidas y especificaciones de tu proyecto. El motor calculará de forma automática los materiales, mano de obra y el <strong>precio exacto</strong>, con opción de <strong>exportar en PDF</strong> oficial.
                 </p>
               </div>
               <div className="bg-stone-50 border border-stone-200 px-3.5 py-2 rounded-lg text-right">
-                <span className="text-[11px] text-stone-500 block font-semibold">Atención Inmediata</span>
+                <span className="text-[11px] text-stone-500 block font-semibold">Atención Telefónica</span>
                 <span className="text-xs font-bold text-black flex items-center gap-1 justify-end">
-                  <Phone className="w-3.5 h-3.5 text-[#898A82]" /> 81-8000-MALLA (6255)
+                  <Phone className="w-3.5 h-3.5 text-[#898A82]" /> (81) 3406-0349
                 </span>
               </div>
             </div>
           </div>
 
-          {submittedFolio ? (
-            <div className="bg-white border-2 border-emerald-500 rounded-xl p-8 text-center space-y-4 shadow-md animate-scale-in">
-              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-10 h-10" />
+          {/* VISTA DE RESULTADO CON PRECIO EXACTO Y EXPORTACIÓN EN PDF */}
+          {intelligentResult ? (
+            <div className="bg-white border-2 border-black rounded-2xl p-6 sm:p-8 space-y-6 shadow-lg animate-scale-in">
+              {/* Encabezado del Presupuesto */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-stone-200 gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-black text-white rounded-xl flex items-center justify-center font-bold">
+                    <FileCheck2 className="w-7 h-7 text-emerald-400" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold px-2 py-0.5 bg-stone-100 text-black border border-stone-200 rounded">
+                        {intelligentResult.folio}
+                      </span>
+                      <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">
+                        Precio Exacto Calculado
+                      </span>
+                    </div>
+                    <h2 className="text-xl font-black text-black mt-1">
+                      Presupuesto Formal Generado
+                    </h2>
+                    <p className="text-xs text-stone-500">
+                      Emitido para: <strong>{intelligentResult.clientName}</strong> • {intelligentResult.city}
+                    </p>
+                  </div>
+                </div>
+
+                {/* BOTÓN DESTACADO DE EXPORTAR A PDF */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={handleExportPdf}
+                    className="flex items-center gap-2 px-5 py-3 bg-black hover:bg-stone-800 text-white rounded-xl font-bold text-xs shadow-md transition cursor-pointer"
+                  >
+                    <Download className="w-4 h-4 text-emerald-400" />
+                    <span>Exportar en PDF</span>
+                  </button>
+                  <button
+                    onClick={() => window.print()}
+                    className="flex items-center gap-1.5 px-3 py-3 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl font-semibold text-xs border border-stone-300 transition"
+                    title="Imprimir cotización"
+                  >
+                    <Printer className="w-4 h-4 text-[#898A82]" />
+                    <span className="hidden sm:inline">Imprimir</span>
+                  </button>
+                </div>
               </div>
-              <h2 className="text-2xl font-bold text-black">
-                ¡Solicitud Registrada con Éxito!
-              </h2>
-              <p className="text-sm text-stone-600 max-w-lg mx-auto">
-                Tu solicitud ha sido enviada al equipo de Ventas de MALLAESA. Estamos calculando el desglose de materiales y te contactaremos en breve.
-              </p>
-              <div className="inline-block bg-stone-100 border border-stone-300 px-6 py-3 rounded-lg">
-                <span className="text-xs font-semibold text-stone-500 block">Tu Folio de Seguimiento es:</span>
-                <span className="text-2xl font-black text-black tracking-wider">{submittedFolio}</span>
+
+              {/* CAJA PRINCIPAL DE PRECIO EXACTO TOTAL */}
+              <div className="bg-stone-900 text-white rounded-2xl p-6 sm:p-8 grid grid-cols-1 md:grid-cols-3 gap-6 items-center shadow-inner">
+                <div className="md:col-span-2 space-y-1">
+                  <span className="text-xs font-bold uppercase tracking-widest text-[#898A82] block">
+                    Inversión Total con IVA Incluido (16%)
+                  </span>
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white font-mono">
+                    ${intelligentResult.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })} <span className="text-lg font-normal text-stone-400">MXN</span>
+                  </div>
+                  <p className="text-xs text-stone-400 pt-1">
+                    Incluye materiales galvanizados certificados, herrajes de tensión, cemento y mano de obra especializada en obra.
+                  </p>
+                </div>
+
+                <div className="bg-stone-800/90 border border-stone-700 p-4 rounded-xl space-y-2 text-xs">
+                  <span className="font-bold text-white block uppercase tracking-wider text-[10px] text-[#898A82]">
+                    Esquema de Pago 50/50:
+                  </span>
+                  <div className="flex justify-between text-stone-300">
+                    <span>50% Anticipo Inicial:</span>
+                    <strong className="text-white">${intelligentResult.advance50.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong>
+                  </div>
+                  <div className="flex justify-between text-stone-300">
+                    <span>50% Saldo contra entrega:</span>
+                    <strong className="text-white">${intelligentResult.balance50.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong>
+                  </div>
+                  <div className="pt-2 border-t border-stone-700 text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" /> Garantía de {intelligentResult.warrantyYears} años por escrito
+                  </div>
+                </div>
               </div>
-              <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+
+              {/* TABLA DE CONCEPTOS DESGLOSADOS */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-black uppercase tracking-wider">
+                    Desglose Técnico de Materiales y Mano de Obra:
+                  </h3>
+                  <span className="text-xs text-stone-500 font-semibold">
+                    {intelligentResult.items.length} conceptos calculados
+                  </span>
+                </div>
+
+                <div className="border border-stone-200 rounded-xl overflow-hidden">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-stone-50 border-b border-stone-200 text-stone-600 font-bold uppercase text-[10px]">
+                      <tr>
+                        <th className="py-2.5 px-3">#</th>
+                        <th className="py-2.5 px-3">Descripción</th>
+                        <th className="py-2.5 px-3 text-center">Cant.</th>
+                        <th className="py-2.5 px-3 text-center">Unidad</th>
+                        <th className="py-2.5 px-3 text-right">P. Unitario</th>
+                        <th className="py-2.5 px-3 text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-100">
+                      {intelligentResult.items.map((item, idx) => (
+                        <tr key={item.id} className="hover:bg-stone-50/50">
+                          <td className="py-2.5 px-3 text-stone-400 font-mono text-[11px]">{idx + 1}</td>
+                          <td className="py-2.5 px-3 font-semibold text-black">{item.description}</td>
+                          <td className="py-2.5 px-3 text-center font-mono">{item.quantity}</td>
+                          <td className="py-2.5 px-3 text-center text-stone-500">{item.unit}</td>
+                          <td className="py-2.5 px-3 text-right font-mono">${item.unitPrice.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
+                          <td className="py-2.5 px-3 text-right font-bold text-black font-mono">${item.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-stone-50 border-t border-stone-200 text-xs">
+                      <tr>
+                        <td colSpan={4} className="py-2 px-3 text-stone-500 text-right">Subtotal:</td>
+                        <td colSpan={2} className="py-2 px-3 text-right font-bold text-black font-mono">
+                          ${intelligentResult.subtotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colSpan={4} className="py-2 px-3 text-stone-500 text-right">IVA Trasladado (16%):</td>
+                        <td colSpan={2} className="py-2 px-3 text-right font-bold text-black font-mono">
+                          ${intelligentResult.iva.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN
+                        </td>
+                      </tr>
+                      <tr className="bg-stone-100 font-bold text-sm">
+                        <td colSpan={4} className="py-3 px-3 text-black text-right">PRECIO EXACTO TOTAL:</td>
+                        <td colSpan={2} className="py-3 px-3 text-right font-black text-black font-mono">
+                          ${intelligentResult.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+
+              {/* Botones de Acción al pie de la cotización */}
+              <div className="pt-4 border-t border-stone-200 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <button
                   onClick={() => {
-                    setSearchFolio(submittedFolio);
-                    handleSearchProject(submittedFolio);
-                    if (onNavigateModule) onNavigateModule('estatus');
+                    setIntelligentResult(null);
                   }}
-                  className="px-6 py-2.5 bg-black hover:bg-stone-800 text-white rounded-lg font-bold text-sm transition"
+                  className="w-full sm:w-auto px-5 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-lg font-semibold text-xs transition"
                 >
-                  Consultar Estatus de mi Proyecto
+                  Modificar Parámetros / Nueva Cotización
                 </button>
-                <button
-                  onClick={() => {
-                    setSubmittedFolio(null);
-                    setClientName('');
-                    setNotes('');
-                  }}
-                  className="px-6 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-lg font-semibold text-sm transition"
-                >
-                  Realizar Otra Cotización
-                </button>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={handleExportPdf}
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 bg-black hover:bg-stone-800 text-white rounded-lg font-bold text-xs transition"
+                  >
+                    <Download className="w-4 h-4 text-emerald-400" />
+                    <span>Descargar PDF</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSearchFolio(intelligentResult.folio);
+                      handleSearchProject(intelligentResult.folio);
+                      if (onNavigateModule) onNavigateModule('estatus');
+                    }}
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 bg-stone-100 hover:bg-stone-200 text-black rounded-lg font-bold text-xs border border-stone-300 transition"
+                  >
+                    <span>Ver Estatus de Obra</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
-            <form onSubmit={handleSubmitRequest} className="bg-white border border-stone-200 rounded-xl p-6 sm:p-8 space-y-8 shadow-xs">
+            <form onSubmit={handleGenerateIntelligentQuote} className="bg-white border border-stone-200 rounded-xl p-6 sm:p-8 space-y-8 shadow-xs">
               {/* Paso 1: Tipo de Servicio */}
               <div>
                 <label className="block text-sm font-bold text-black mb-1">
@@ -332,19 +531,96 @@ export const ClientPortal: React.FC<{
                 </div>
               </div>
 
-              {/* Paso 3: Ubicación y Contacto */}
+              {/* Paso 3: Adicionales Inteligentes */}
               <div className="border-t border-stone-200 pt-6">
                 <label className="block text-sm font-bold text-black mb-1">
-                  3. Datos de Ubicación y Contacto del Cliente:
+                  3. Elementos Adicionales de Seguridad y Accesos (Opcional):
                 </label>
                 <p className="text-xs text-stone-500 mb-4">
-                  Datos indispensables para generar el folio formal y coordinar la propuesta.
+                  Selecciona complementos para integrarlos al cálculo exacto del presupuesto.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                  <label className="flex items-start gap-2.5 p-3 rounded-lg border border-stone-200 bg-stone-50 hover:bg-stone-100 cursor-pointer transition">
+                    <input
+                      type="checkbox"
+                      checked={addConcertinaTop}
+                      onChange={e => setAddConcertinaTop(e.target.checked)}
+                      className="mt-0.5 rounded text-black focus:ring-black h-4 w-4"
+                    />
+                    <div>
+                      <span className="font-bold text-black block">Concertina Arpón Superior</span>
+                      <span className="text-[11px] text-stone-500">Espiral de navajas sobre postes</span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-2.5 p-3 rounded-lg border border-stone-200 bg-stone-50 hover:bg-stone-100 cursor-pointer transition">
+                    <input
+                      type="checkbox"
+                      checked={addBarbedWireTop}
+                      onChange={e => setAddBarbedWireTop(e.target.checked)}
+                      className="mt-0.5 rounded text-black focus:ring-black h-4 w-4"
+                    />
+                    <div>
+                      <span className="font-bold text-black block">Alambre de Púas (3 hilos)</span>
+                      <span className="text-[11px] text-stone-500">Brazos inclinados a 45°</span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-2.5 p-3 rounded-lg border border-stone-200 bg-stone-50 hover:bg-stone-100 cursor-pointer transition">
+                    <input
+                      type="checkbox"
+                      checked={addGate}
+                      onChange={e => setAddGate(e.target.checked)}
+                      className="mt-0.5 rounded text-black focus:ring-black h-4 w-4"
+                    />
+                    <div>
+                      <span className="font-bold text-black block">Portón Vehicular (4m x {heightMeters}m)</span>
+                      <span className="text-[11px] text-stone-500">Corredizo o abatible para camiones</span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-2.5 p-3 rounded-lg border border-stone-200 bg-stone-50 hover:bg-stone-100 cursor-pointer transition">
+                    <input
+                      type="checkbox"
+                      checked={addPedestrianGate}
+                      onChange={e => setAddPedestrianGate(e.target.checked)}
+                      className="mt-0.5 rounded text-black focus:ring-black h-4 w-4"
+                    />
+                    <div>
+                      <span className="font-bold text-black block">Puerta Peatonal (1m x {heightMeters}m)</span>
+                      <span className="text-[11px] text-stone-500">Con cerrojo y marco galvanizado</span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-2.5 p-3 rounded-lg border border-stone-200 bg-stone-50 hover:bg-stone-100 cursor-pointer transition">
+                    <input
+                      type="checkbox"
+                      checked={addPrivacyTape}
+                      onChange={e => setAddPrivacyTape(e.target.checked)}
+                      className="mt-0.5 rounded text-black focus:ring-black h-4 w-4"
+                    />
+                    <div>
+                      <span className="font-bold text-black block">Cinta de Privacidad Rompevientos</span>
+                      <span className="text-[11px] text-stone-500">Bloqueo visual del 95% con filtro UV</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Paso 4: Ubicación y Contacto */}
+              <div className="border-t border-stone-200 pt-6">
+                <label className="block text-sm font-bold text-black mb-1">
+                  4. Datos del Cliente para Emisión de Presupuesto Formal:
+                </label>
+                <p className="text-xs text-stone-500 mb-4">
+                  Requeridos para emitir el folio fiscal y membrete oficial descargable.
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-stone-700 mb-1">
-                      Nombre Completo o Empresa *
+                      Nombre Completo o Razón Social *
                     </label>
                     <div className="relative">
                       <User className="w-4 h-4 text-[#898A82] absolute left-3 top-3" />
@@ -378,7 +654,7 @@ export const ClientPortal: React.FC<{
 
                   <div>
                     <label className="block text-xs font-bold text-stone-700 mb-1">
-                      Correo Electrónico (para recibir la Cotización en PDF) *
+                      Correo Electrónico
                     </label>
                     <div className="relative">
                       <Mail className="w-4 h-4 text-[#898A82] absolute left-3 top-3" />
@@ -402,7 +678,7 @@ export const ClientPortal: React.FC<{
                         type="text"
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
-                        placeholder="Ej. Monterrey, Apodaca, San Pedro, García..."
+                        placeholder="Ej. Monterrey, Apodaca, San Pedro..."
                         className="w-full pl-9 pr-3 py-2.5 bg-stone-50 border border-stone-300 rounded-lg text-sm text-black font-semibold focus:outline-hidden focus:border-black"
                         required
                       />
@@ -411,7 +687,7 @@ export const ClientPortal: React.FC<{
 
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-bold text-stone-700 mb-1">
-                      Dirección o Referencia del Proyecto
+                      Dirección o Referencia del Predio
                     </label>
                     <input
                       type="text"
@@ -424,88 +700,26 @@ export const ClientPortal: React.FC<{
                 </div>
               </div>
 
-              {/* Paso 4: Fotos, Croquis y Notas */}
-              <div className="border-t border-stone-200 pt-6">
-                <label className="block text-sm font-bold text-black mb-1">
-                  4. Adjuntar Fotos, Croquis del Perímetro o Notas Especiales (Opcional):
-                </label>
-                <p className="text-xs text-stone-500 mb-3">
-                  Sube una foto del frente o croquis dibujado para agilizar la cotización técnica exacta.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Foto o Croquis */}
-                  <div className="border-2 border-dashed border-stone-300 hover:border-black rounded-xl p-4 text-center bg-stone-50 transition flex flex-col items-center justify-center min-h-[120px]">
-                    {uploadedPhotoUrl ? (
-                      <div className="relative w-full">
-                        <img
-                          src={uploadedPhotoUrl}
-                          alt="Foto del proyecto"
-                          className="h-28 w-full object-cover rounded-lg border border-stone-200"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setUploadedPhotoUrl('')}
-                          className="mt-2 text-xs text-red-600 font-semibold hover:underline"
-                        >
-                          Eliminar foto
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <Upload className="w-7 h-7 text-[#898A82] mb-1" />
-                        <span className="text-xs font-bold text-black">
-                          Subir Foto o Croquis del Perímetro
-                        </span>
-                        <span className="text-[11px] text-stone-500 mt-0.5">
-                          Formatos JPG, PNG o PDF
-                        </span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (event) => {
-                                setUploadedPhotoUrl(event.target?.result as string);
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                          className="mt-2 text-xs text-stone-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-black file:text-white hover:file:bg-stone-800 cursor-pointer"
-                        />
-                      </>
-                    )}
+              {/* BARRA FLOTANTE EN VIVO DEL PRECIO ESTIMADO */}
+              <div className="bg-stone-900 text-white p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
+                <div className="text-center sm:text-left">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#898A82] block">
+                    Cálculo Inteligente en Tiempo Real:
+                  </span>
+                  <div className="text-2xl sm:text-3xl font-black font-mono text-white">
+                    ${liveQuote.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })} <span className="text-xs font-normal text-stone-400">MXN (IVA Incluido)</span>
                   </div>
-
-                  {/* Notas */}
-                  <div>
-                    <label className="block text-xs font-bold text-stone-700 mb-1">
-                      Comentarios o requerimientos específicos:
-                    </label>
-                    <textarea
-                      rows={4}
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Ej. Requiero portón corredizo de 4 metros, o concertina con doble navaja en la parte superior..."
-                      className="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-xs text-black focus:outline-hidden focus:border-black resize-none"
-                    ></textarea>
-                  </div>
+                  <span className="text-[11px] text-stone-400">
+                    50% Anticipo: ${liveQuote.advance50.toLocaleString('es-MX')} • 50% Saldo: ${liveQuote.balance50.toLocaleString('es-MX')}
+                  </span>
                 </div>
-              </div>
 
-              {/* Botón de Envío */}
-              <div className="pt-4 border-t border-stone-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-xs text-stone-500">
-                  <span className="font-semibold text-black">Garantía MALLAESA:</span> Materiales galvanizados de primera calidad y mano de obra certificada.
-                </div>
                 <button
                   type="submit"
-                  className="w-full sm:w-auto px-8 py-3.5 bg-black hover:bg-stone-800 text-white rounded-xl font-bold text-sm tracking-wide shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto px-8 py-3.5 bg-white text-black hover:bg-stone-100 rounded-xl font-bold text-xs tracking-wider uppercase transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <Send className="w-4 h-4" />
-                  Enviar Cuestionario y Solicitar Cotización
+                  <Sparkles className="w-4 h-4 text-[#898A82]" />
+                  <span>Generar Cotización Formal con Precio Exacto</span>
                 </button>
               </div>
             </form>
@@ -549,7 +763,7 @@ export const ClientPortal: React.FC<{
             {/* Accesos rápidos a folios demo si existen */}
             {projects.length > 0 && (
               <div className="mt-4 pt-3 border-t border-stone-100 flex items-center gap-2 flex-wrap">
-                <span className="text-[11px] font-semibold text-stone-500">Folios de muestra disponibles:</span>
+                <span className="text-[11px] font-semibold text-stone-500">Folios registrados en el sistema:</span>
                 {projects.slice(0, 4).map((p) => (
                   <button
                     key={p.folio}
@@ -590,7 +804,7 @@ export const ClientPortal: React.FC<{
                 </div>
 
                 <div className="text-left sm:text-right bg-stone-50 sm:bg-transparent p-3 sm:p-0 rounded-lg">
-                  <span className="text-xs text-stone-500 block font-semibold">Inversión Estimada:</span>
+                  <span className="text-xs text-stone-500 block font-semibold">Precio Total de Obra:</span>
                   <span className="text-xl font-black text-black">
                     ${searchedProject.totalAmount > 0 ? searchedProject.totalAmount.toLocaleString('es-MX', { minimumFractionDigits: 2 }) : 'En proceso'} MXN
                   </span>
@@ -649,44 +863,10 @@ export const ClientPortal: React.FC<{
                 </div>
               </div>
 
-              {/* Detalles Técnicos */}
-              <div className="bg-stone-50 border border-stone-200 rounded-xl p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div>
-                  <span className="text-[11px] font-bold uppercase text-stone-500 block">Sistema</span>
-                  <span className="text-xs font-semibold text-black capitalize">
-                    {searchedProject.serviceType.replace('_', ' ')}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[11px] font-bold uppercase text-stone-500 block">Metros Lineales</span>
-                  <span className="text-xs font-semibold text-black">
-                    {searchedProject.linearMeters} metros
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[11px] font-bold uppercase text-stone-500 block">Anticipo (50%)</span>
-                  <span className="text-xs font-semibold text-black flex items-center gap-1">
-                    {searchedProject.advancePaid ? (
-                      <span className="text-emerald-700 font-bold flex items-center gap-1">
-                        <Check className="w-3.5 h-3.5" /> Confirmado
-                      </span>
-                    ) : (
-                      <span className="text-amber-700 font-medium">Pendiente de registro</span>
-                    )}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[11px] font-bold uppercase text-stone-500 block">Cuadrilla Asignada</span>
-                  <span className="text-xs font-semibold text-black">
-                    {searchedProject.assignedCrew || 'Por programar'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Botón interactivo para APROBAR Y FIRMAR cotización si está en Fase 2 o 3 */}
+              {/* Botón interactivo para APROBAR Y FIRMAR cotización */}
               {(() => {
                 const quote = formalQuotes.find(q => q.folio === searchedProject.folio);
-                if (quote && quote.status === 'enviada') {
+                if (quote && (quote.status === 'enviada' || quote.status === 'borrador')) {
                   return (
                     <div className="bg-stone-100 border border-stone-300 rounded-xl p-5 space-y-3">
                       <div className="flex items-center justify-between">
@@ -746,7 +926,7 @@ export const ClientPortal: React.FC<{
                 return null;
               })()}
 
-              {/* Si el proyecto está en Fase 5 con Garantía emitida */}
+              {/* Póliza de Garantía Digital */}
               {searchedProject.warrantyFolio && (
                 <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-5 flex items-start gap-4">
                   <div className="p-2.5 bg-emerald-600 text-white rounded-lg">
@@ -764,14 +944,6 @@ export const ClientPortal: React.FC<{
                     <p className="text-xs text-emerald-800 mt-1">
                       Cobertura integral por {searchedProject.warrantyYears || 3} años contra defectos de fabricación, anclaje y corrosión galvanizada.
                     </p>
-                    <div className="mt-3 flex items-center gap-3">
-                      <button
-                        onClick={() => alert(`Póliza ${searchedProject.warrantyFolio} descargada exitosamente en PDF.`)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-lg transition"
-                      >
-                        <Download className="w-3.5 h-3.5" /> Descargar Certificado de Garantía (PDF)
-                      </button>
-                    </div>
                   </div>
                 </div>
               )}

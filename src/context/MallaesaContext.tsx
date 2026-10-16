@@ -55,6 +55,26 @@ interface MallaesaContextType {
     photoUrl?: string;
   }) => string; // returns folio
 
+  saveIntelligentQuote: (data: {
+    folio: string;
+    clientName: string;
+    clientPhone: string;
+    clientEmail: string;
+    projectAddress: string;
+    city: string;
+    serviceType: ServiceType;
+    linearMeters: number;
+    heightMeters: number;
+    terrainType: TerrainType;
+    items: QuoteItem[];
+    subtotal: number;
+    iva: number;
+    total: number;
+    advance50: number;
+    balance50: number;
+    estimatedWorkDays: number;
+  }) => void;
+
   // Actions for Phase 2: Sales
   createFormalQuote: (requestId: string, items: QuoteItem[], discountPercent: number, estimatedDays: number) => FormalQuote;
   requestDiscountApproval: (quoteId: string, percent: number, reason: string) => void;
@@ -290,6 +310,103 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setRequests(prev => [newReq, ...prev]);
     setProjects(prev => [newProj, ...prev]);
     return folio;
+  };
+
+  // Phase 1 to 2: Intelligent Quote save
+  const saveIntelligentQuote = (data: {
+    folio: string;
+    clientName: string;
+    clientPhone: string;
+    clientEmail: string;
+    projectAddress: string;
+    city: string;
+    serviceType: ServiceType;
+    linearMeters: number;
+    heightMeters: number;
+    terrainType: TerrainType;
+    items: QuoteItem[];
+    subtotal: number;
+    iva: number;
+    total: number;
+    advance50: number;
+    balance50: number;
+    estimatedWorkDays: number;
+  }) => {
+    const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    const reqId = `req-${Date.now()}`;
+    const quoteId = `quote-${Date.now()}`;
+    const projId = `proj-${Date.now()}`;
+
+    const newReq: QuoteRequest = {
+      id: reqId,
+      folio: data.folio,
+      clientName: data.clientName,
+      clientPhone: data.clientPhone,
+      clientEmail: data.clientEmail,
+      projectAddress: data.projectAddress,
+      city: data.city,
+      serviceType: data.serviceType,
+      linearMeters: data.linearMeters,
+      heightMeters: data.heightMeters,
+      terrainType: data.terrainType,
+      createdAt: now,
+      status: 'cotizado'
+    };
+
+    const newQuote: FormalQuote = {
+      id: quoteId,
+      requestId: reqId,
+      folio: data.folio,
+      clientName: data.clientName,
+      clientEmail: data.clientEmail,
+      clientPhone: data.clientPhone,
+      projectAddress: data.projectAddress,
+      serviceType: data.serviceType,
+      linearMeters: data.linearMeters,
+      heightMeters: data.heightMeters,
+      items: data.items,
+      subtotal: data.subtotal,
+      discountPercent: 0,
+      discountApproved: true,
+      discountApprovalPending: false,
+      discountAmount: 0,
+      iva: data.iva,
+      total: data.total,
+      advanceRequired: data.advance50,
+      balanceRemaining: data.balance50,
+      estimatedDays: data.estimatedWorkDays,
+      status: 'enviada',
+      createdAt: now,
+      sentAt: now
+    };
+
+    const newProj: Project = {
+      id: projId,
+      folio: data.folio,
+      quoteId,
+      clientName: data.clientName,
+      clientPhone: data.clientPhone,
+      clientEmail: data.clientEmail,
+      projectAddress: data.projectAddress,
+      city: data.city,
+      serviceType: data.serviceType,
+      linearMeters: data.linearMeters,
+      heightMeters: data.heightMeters,
+      phase: 2,
+      phaseName: 'Fase 2: Cotización Generada con Precio Exacto',
+      status: 'cotizacion_enviada',
+      totalAmount: data.total,
+      advanceAmount: data.advance50,
+      advancePaid: false,
+      balanceAmount: data.balance50,
+      balancePaid: false,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    setRequests(prev => [newReq, ...prev.filter(r => r.folio !== data.folio)]);
+    setFormalQuotes(prev => [newQuote, ...prev.filter(q => q.folio !== data.folio)]);
+    setProjects(prev => [newProj, ...prev.filter(p => p.folio !== data.folio)]);
   };
 
   // Phase 2: Sales creates quotation
@@ -739,6 +856,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setNoSampleDataMode,
         restoreDemoData,
         submitClientRequest,
+        saveIntelligentQuote,
         createFormalQuote,
         requestDiscountApproval,
         sendQuoteToClient,
