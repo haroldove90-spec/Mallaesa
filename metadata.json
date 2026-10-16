@@ -1,0 +1,6 @@
+{
+  "name": "Mallaesa",
+  "description": "Sistema Integral de Seguridad Perimetral y Gestión Operativa MALLAESA",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

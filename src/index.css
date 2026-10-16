@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --mallaesa-primary: #898A82;
+    --mallaesa-dark: #000000;
+    --mallaesa-secondary: #6B6C65;
+    --mallaesa-muted: #F4F4F3;
+    --mallaesa-border: #D8D9D5;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: #F8F9F8;
+    color: #000000;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f0;
+}
+::-webkit-scrollbar-thumb {
+  background: #898A82;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #6B6C65;
+}
+
+/* Print styling for quotes & work orders */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+}
