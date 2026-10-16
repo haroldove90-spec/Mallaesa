@@ -35,10 +35,11 @@ export interface NavItem {
 export const ROLE_MODULES: Record<RoleType, NavItem[]> = {
   pagina_web: [
     { id: 'inicio', label: 'Inicio', icon: <Home className="w-5 h-5" /> },
-    { id: 'servicios', label: 'Servicios', icon: <Grid className="w-5 h-5" /> },
+    { id: 'catalogo', label: 'Catálogo de Acero', icon: <Grid className="w-5 h-5" /> },
+    { id: 'accesorios', label: 'Accesorios & Postes', icon: <Boxes className="w-5 h-5" /> },
+    { id: 'soluciones', label: 'Soluciones por Sector', icon: <Layers className="w-5 h-5" /> },
     { id: 'nosotros', label: 'Nosotros', icon: <ShieldCheck className="w-5 h-5" /> },
-    { id: 'proyectos', label: 'Galería de Obras', icon: <Camera className="w-5 h-5" /> },
-    { id: 'contacto', label: 'Contacto & Cotizar', icon: <PhoneCall className="w-5 h-5" /> }
+    { id: 'contacto', label: 'Cotizador Inteligente', icon: <PhoneCall className="w-5 h-5" /> }
   ],
   cliente: [
     { id: 'cuestionario', label: 'Cotizar en Línea', icon: <Calculator className="w-5 h-5" /> },
