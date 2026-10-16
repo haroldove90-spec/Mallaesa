@@ -24,7 +24,11 @@ import {
   Check,
   Download,
   Printer,
-  FileCheck2
+  FileCheck2,
+  Menu,
+  X,
+  PlusCircle,
+  HelpCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { calculateIntelligentQuote, exportQuoteToPdf, IntelligentQuoteResult } from '../../utils/quoteCalculator';
@@ -37,6 +41,7 @@ interface WebsitePortalProps {
 
 export const WebsitePortal: React.FC<WebsitePortalProps> = ({ activeModule, onNavigateModule }) => {
   const { saveIntelligentQuote, setActiveRole } = useMallaesa();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Contact form state
   const [formData, setFormData] = useState({
@@ -49,6 +54,11 @@ export const WebsitePortal: React.FC<WebsitePortalProps> = ({ activeModule, onNa
     meters: 60,
     height: 2.0,
     terrain: 'tierra',
+    addConcertinaTop: false,
+    addBarbedWireTop: false,
+    addGate: false,
+    addPedestrianGate: false,
+    addPrivacyTape: false,
     notes: ''
   });
 
@@ -66,6 +76,11 @@ export const WebsitePortal: React.FC<WebsitePortalProps> = ({ activeModule, onNa
       linearMeters: Number(formData.meters) || 50,
       heightMeters: Number(formData.height) || 2.0,
       terrainType: (formData.terrain || 'tierra') as TerrainType,
+      addConcertinaTop: formData.addConcertinaTop,
+      addBarbedWireTop: formData.addBarbedWireTop,
+      addGate: formData.addGate,
+      addPedestrianGate: formData.addPedestrianGate,
+      addPrivacyTape: formData.addPrivacyTape,
       notes: formData.notes
     });
   }, [formData]);
@@ -84,7 +99,7 @@ export const WebsitePortal: React.FC<WebsitePortalProps> = ({ activeModule, onNa
   const handleSubmitForm = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.phone) {
-      alert('Por favor completa al menos tu nombre y teléfono.');
+      alert('Por favor completa al menos tu nombre y teléfono para generar tu cotización oficial.');
       return;
     }
 
@@ -98,14 +113,24 @@ export const WebsitePortal: React.FC<WebsitePortalProps> = ({ activeModule, onNa
       linearMeters: Number(formData.meters) || 50,
       heightMeters: Number(formData.height) || 2.0,
       terrainType: (formData.terrain || 'tierra') as TerrainType,
+      addConcertinaTop: formData.addConcertinaTop,
+      addBarbedWireTop: formData.addBarbedWireTop,
+      addGate: formData.addGate,
+      addPedestrianGate: formData.addPedestrianGate,
+      addPrivacyTape: formData.addPrivacyTape,
       notes: formData.notes
     });
 
     saveIntelligentQuote(result);
     setIntelligentResult(result);
     try {
-      confetti({ particleCount: 85, spread: 75, origin: { y: 0.6 } });
+      confetti({ particleCount: 95, spread: 80, origin: { y: 0.6 } });
     } catch {}
+
+    const contactEl = document.getElementById('contacto');
+    if (contactEl) {
+      contactEl.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const SERVICES = [
@@ -214,67 +239,209 @@ export const WebsitePortal: React.FC<WebsitePortalProps> = ({ activeModule, onNa
             >
               <MessageCircle className="w-3 h-3" /> WhatsApp Ventas
             </a>
+            {/* Botón Acceso a Roles del Sistema */}
+            <button
+              onClick={() => setActiveRole(null)}
+              className="flex items-center gap-1 px-2 py-0.5 bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white rounded text-[11px] font-semibold border border-stone-700 transition cursor-pointer"
+              title="Cambiar al selector de roles del sistema"
+            >
+              <Layers className="w-3 h-3 text-[#898A82]" />
+              <span className="hidden sm:inline">Acceso al Sistema</span>
+            </button>
           </div>
         </div>
       </div>
 
       {/* 2. INSTITUTIONAL WEBSITE HEADER */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-xs">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img
-              src="https://appdesignproyectos.com/mallaesalogo.png"
-              alt="MALLAESA Seguridad Perimetral"
-              className="h-10 sm:h-12 w-auto object-contain"
-            />
+            <button
+              onClick={() => {
+                onNavigateModule?.('inicio');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="cursor-pointer focus:outline-hidden"
+            >
+              <img
+                src="https://appdesignproyectos.com/mallaesalogo.png"
+                alt="MALLAESA Seguridad Perimetral"
+                className="h-10 sm:h-12 w-auto object-contain transition-transform hover:scale-102"
+              />
+            </button>
           </div>
 
-          {/* Navigation Links */}
+          {/* Navigation Links en versión Fullscreen (Desktop) */}
           <nav className="hidden lg:flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-stone-700">
             <button
-              onClick={() => onNavigateModule?.('inicio')}
-              className={`hover:text-black transition ${activeModule === 'inicio' ? 'text-black border-b-2 border-black pb-1' : ''}`}
+              onClick={() => {
+                onNavigateModule?.('inicio');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className={`hover:text-black transition cursor-pointer ${activeModule === 'inicio' ? 'text-black border-b-2 border-black pb-1' : ''}`}
             >
               Inicio
             </button>
             <button
-              onClick={() => onNavigateModule?.('servicios')}
-              className={`hover:text-black transition ${activeModule === 'servicios' ? 'text-black border-b-2 border-black pb-1' : ''}`}
+              onClick={() => {
+                onNavigateModule?.('servicios');
+                document.getElementById('servicios')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className={`hover:text-black transition cursor-pointer ${activeModule === 'servicios' ? 'text-black border-b-2 border-black pb-1' : ''}`}
             >
               Servicios
             </button>
             <button
-              onClick={() => onNavigateModule?.('nosotros')}
-              className={`hover:text-black transition ${activeModule === 'nosotros' ? 'text-black border-b-2 border-black pb-1' : ''}`}
+              onClick={() => {
+                onNavigateModule?.('nosotros');
+                document.getElementById('nosotros')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className={`hover:text-black transition cursor-pointer ${activeModule === 'nosotros' ? 'text-black border-b-2 border-black pb-1' : ''}`}
             >
               Nosotros
             </button>
             <button
-              onClick={() => onNavigateModule?.('proyectos')}
-              className={`hover:text-black transition ${activeModule === 'proyectos' ? 'text-black border-b-2 border-black pb-1' : ''}`}
+              onClick={() => {
+                onNavigateModule?.('proyectos');
+                document.getElementById('proyectos')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className={`hover:text-black transition cursor-pointer ${activeModule === 'proyectos' ? 'text-black border-b-2 border-black pb-1' : ''}`}
             >
               Galería
             </button>
             <button
-              onClick={() => onNavigateModule?.('contacto')}
-              className={`hover:text-black transition ${activeModule === 'contacto' ? 'text-black border-b-2 border-black pb-1' : ''}`}
+              onClick={() => {
+                onNavigateModule?.('contacto');
+                document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className={`hover:text-black transition cursor-pointer ${activeModule === 'contacto' ? 'text-black border-b-2 border-black pb-1' : ''}`}
             >
-              Contacto
+              Cotizador Inteligente
             </button>
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* CTA Desktop */}
             <button
               onClick={() => {
-                setActiveRole('cliente');
+                document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-black hover:bg-stone-800 text-white rounded-lg font-bold text-xs shadow-xs transition"
+              className="hidden sm:flex items-center gap-1.5 px-3.5 sm:px-4 py-2 bg-black hover:bg-stone-800 text-white rounded-lg font-bold text-xs shadow-xs transition cursor-pointer"
             >
-              <span>Cotizador Online</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Cotizar en Línea</span>
+            </button>
+
+            {/* Icono de Hamburguesa para Tablet y Móvil */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 rounded-lg text-stone-700 hover:text-black hover:bg-stone-100 transition focus:outline-hidden cursor-pointer"
+              aria-label="Abrir menú de navegación"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6 text-black" /> : <Menu className="w-6 h-6 text-black" />}
             </button>
           </div>
         </div>
+
+        {/* Menú Desplegable Responsivo para Tablet y Móvil */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden bg-white border-b border-stone-200 px-4 py-4 space-y-3 shadow-xl animate-fade-in">
+            <div className="flex flex-col space-y-1 text-xs font-bold uppercase tracking-wider text-stone-700">
+              <button
+                onClick={() => {
+                  onNavigateModule?.('inicio');
+                  setMobileMenuOpen(false);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-stone-100 text-left transition"
+              >
+                <span>Inicio</span>
+                <ChevronRight className="w-4 h-4 text-stone-400" />
+              </button>
+              <button
+                onClick={() => {
+                  onNavigateModule?.('servicios');
+                  setMobileMenuOpen(false);
+                  document.getElementById('servicios')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-stone-100 text-left transition"
+              >
+                <span>Servicios de Seguridad Perimetral</span>
+                <ChevronRight className="w-4 h-4 text-stone-400" />
+              </button>
+              <button
+                onClick={() => {
+                  onNavigateModule?.('nosotros');
+                  setMobileMenuOpen(false);
+                  document.getElementById('nosotros')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-stone-100 text-left transition"
+              >
+                <span>Nosotros & Garantía Mallaesa</span>
+                <ChevronRight className="w-4 h-4 text-stone-400" />
+              </button>
+              <button
+                onClick={() => {
+                  onNavigateModule?.('proyectos');
+                  setMobileMenuOpen(false);
+                  document.getElementById('proyectos')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-stone-100 text-left transition"
+              >
+                <span>Galería de Obras Instaladas</span>
+                <ChevronRight className="w-4 h-4 text-stone-400" />
+              </button>
+              <button
+                onClick={() => {
+                  onNavigateModule?.('contacto');
+                  setMobileMenuOpen(false);
+                  document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-stone-100 text-black font-extrabold text-left transition border border-stone-200"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                  Cotizador Inteligente con PDF
+                </span>
+                <ChevronRight className="w-4 h-4 text-black" />
+              </button>
+            </div>
+
+            {/* Accesos Rápidos en Móvil */}
+            <div className="pt-3 border-t border-stone-200 space-y-2">
+              <a
+                href="https://wa.me/528134060349?text=Hola,%20me%20comunico%20desde%20www.mallaesa.com,%20deseo%20cotizar"
+                target="_blank"
+                rel="noreferrer"
+                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>WhatsApp Ventas (81) 3406-0349</span>
+              </a>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setActiveRole('cliente');
+                  }}
+                  className="py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-lg font-bold text-[11px] border border-stone-300 transition"
+                >
+                  Portal de Clientes
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setActiveRole(null);
+                  }}
+                  className="py-2 bg-black hover:bg-stone-800 text-white rounded-lg font-bold text-[11px] transition"
+                >
+                  Acceso a Roles
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* 3. HERO SECTION (www.mallaesa.com) */}
@@ -653,7 +820,16 @@ export const WebsitePortal: React.FC<WebsitePortalProps> = ({ activeModule, onNa
                     Cotizar otro metraje
                   </button>
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    <a
+                      href={`https://wa.me/528134060349?text=Hola%20MALLAESA,%20gener%C3%A9%20mi%20cotizaci%C3%B3n%20en%20l%C3%ADnea%20Folio:%20${intelligentResult.folio}%20por%20$${intelligentResult.total}%20MXN%20para%20${encodeURIComponent(intelligentResult.serviceLabel)}.`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5 shadow-xs"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>WhatsApp Ventas</span>
+                    </a>
                     <button
                       onClick={() => window.print()}
                       className="px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold rounded-lg border border-stone-300 transition flex items-center gap-1"
@@ -663,7 +839,7 @@ export const WebsitePortal: React.FC<WebsitePortalProps> = ({ activeModule, onNa
                     </button>
                     <button
                       onClick={() => exportQuoteToPdf(intelligentResult)}
-                      className="px-5 py-2 bg-black hover:bg-stone-800 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5 cursor-pointer"
+                      className="px-5 py-2 bg-black hover:bg-stone-800 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5 cursor-pointer shadow-md"
                     >
                       <Download className="w-3.5 h-3.5 text-emerald-400" />
                       Descargar PDF Oficial
@@ -731,7 +907,7 @@ export const WebsitePortal: React.FC<WebsitePortalProps> = ({ activeModule, onNa
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <div>
                     <label className="block font-bold text-stone-700 mb-1">Sistema Requerido</label>
                     <select
@@ -739,8 +915,8 @@ export const WebsitePortal: React.FC<WebsitePortalProps> = ({ activeModule, onNa
                       onChange={e => setFormData({ ...formData, service: e.target.value })}
                       className="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-black font-semibold focus:outline-hidden focus:border-black"
                     >
-                      <option value="malla_ciclonica">Malla Ciclónica</option>
-                      <option value="reja_acero">Reja de Acero</option>
+                      <option value="malla_ciclonica">Malla Ciclónica Galvanizada</option>
+                      <option value="reja_acero">Reja de Acero Ornamental</option>
                       <option value="concertina">Concertina Arpón</option>
                       <option value="cerca_electrificada">Cerco Electrificado</option>
                       <option value="malla_ganadera">Malla Ganadera</option>
@@ -749,7 +925,7 @@ export const WebsitePortal: React.FC<WebsitePortalProps> = ({ activeModule, onNa
                     </select>
                   </div>
                   <div>
-                    <label className="block font-bold text-stone-700 mb-1">Metros Aprox.</label>
+                    <label className="block font-bold text-stone-700 mb-1">Metros Lineales</label>
                     <input
                       type="number"
                       min="5"
@@ -771,40 +947,109 @@ export const WebsitePortal: React.FC<WebsitePortalProps> = ({ activeModule, onNa
                       <option value="3.0">3.00 metros</option>
                     </select>
                   </div>
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">Tipo de Terreno</label>
+                    <select
+                      value={formData.terrain}
+                      onChange={e => setFormData({ ...formData, terrain: e.target.value })}
+                      className="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-black font-semibold focus:outline-hidden focus:border-black"
+                    >
+                      <option value="tierra">Tierra / Pasto Natural</option>
+                      <option value="plano">Firme Plano Regular</option>
+                      <option value="concreto">Concreto / Sobre Barda</option>
+                      <option value="inclinado">Terreno Inclinado</option>
+                      <option value="mixto">Mixto con Rocas</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Accesorios y Complementos Opcionales */}
+                <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-stone-600 block mb-2">
+                    Adicionales Opcionales para tu Proyecto
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+                    <label className="flex items-center gap-2 p-1.5 rounded hover:bg-stone-100 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.addConcertinaTop}
+                        onChange={e => setFormData({ ...formData, addConcertinaTop: e.target.checked })}
+                        className="rounded text-black focus:ring-black"
+                      />
+                      <span className="text-stone-800">Concertina Arpón superior</span>
+                    </label>
+                    <label className="flex items-center gap-2 p-1.5 rounded hover:bg-stone-100 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.addBarbedWireTop}
+                        onChange={e => setFormData({ ...formData, addBarbedWireTop: e.target.checked })}
+                        className="rounded text-black focus:ring-black"
+                      />
+                      <span className="text-stone-800">3 Hilos alambre de púas</span>
+                    </label>
+                    <label className="flex items-center gap-2 p-1.5 rounded hover:bg-stone-100 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.addGate}
+                        onChange={e => setFormData({ ...formData, addGate: e.target.checked })}
+                        className="rounded text-black focus:ring-black"
+                      />
+                      <span className="text-stone-800">Portón vehicular 4m</span>
+                    </label>
+                    <label className="flex items-center gap-2 p-1.5 rounded hover:bg-stone-100 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.addPedestrianGate}
+                        onChange={e => setFormData({ ...formData, addPedestrianGate: e.target.checked })}
+                        className="rounded text-black focus:ring-black"
+                      />
+                      <span className="text-stone-800">Puerta peatonal 1m</span>
+                    </label>
+                    <label className="flex items-center gap-2 p-1.5 rounded hover:bg-stone-100 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.addPrivacyTape}
+                        onChange={e => setFormData({ ...formData, addPrivacyTape: e.target.checked })}
+                        className="rounded text-black focus:ring-black"
+                      />
+                      <span className="text-stone-800">Cinta rompevientos de privacidad</span>
+                    </label>
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block font-bold text-stone-700 mb-1">Detalles del Perímetro o Accesorios</label>
+                  <label className="block font-bold text-stone-700 mb-1">Detalles del Perímetro o Comentarios</label>
                   <textarea
                     rows={2}
                     value={formData.notes}
                     onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder="Especifique si requiere concertina superior, portón o condiciones del terreno..."
+                    placeholder="Especifique detalles como portones especiales, acceso o restricciones de obra..."
                     className="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-black focus:outline-hidden focus:border-black resize-none"
                   ></textarea>
                 </div>
 
                 {/* Previsualización en Vivo del Precio */}
-                <div className="p-3 bg-stone-100 rounded-xl flex items-center justify-between border border-stone-200">
+                <div className="p-3.5 bg-stone-100 rounded-xl flex flex-col sm:flex-row items-center justify-between border border-stone-200 gap-2">
                   <div>
                     <span className="text-[10px] uppercase font-bold text-stone-500 block">
                       Precio Estimado en Vivo:
                     </span>
-                    <span className="font-mono text-base font-black text-black">
+                    <span className="font-mono text-lg font-black text-black">
                       ${liveQuote.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN
                     </span>
                   </div>
-                  <span className="text-[11px] text-stone-500">
-                    IVA 16% incluido
-                  </span>
+                  <div className="text-[11px] text-stone-500 text-right">
+                    <span>Subtotal: ${liveQuote.subtotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })} + IVA 16%</span>
+                    <span className="block font-medium text-emerald-700">Incluye materiales, flete y mano de obra</span>
+                  </div>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-3 bg-black hover:bg-stone-800 text-white rounded-xl font-bold text-xs tracking-wider uppercase transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3.5 bg-black hover:bg-stone-800 text-white rounded-xl font-bold text-xs tracking-wider uppercase transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4 text-emerald-400" />
-                  Calcular Precio Exacto & Generar PDF
+                  Calcular Precio Exacto & Generar Cotización Oficial en PDF
                 </button>
               </form>
             )}

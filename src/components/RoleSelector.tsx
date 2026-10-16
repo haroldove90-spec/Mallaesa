@@ -68,9 +68,9 @@ export const RoleSelector: React.FC = () => {
           <img
             src="https://appdesignproyectos.com/mallaesalogo.png"
             alt="MALLAESA Seguridad Perimetral"
-            className="h-16 sm:h-20 md:h-24 w-auto object-contain filter drop-shadow-sm transition-transform duration-300 hover:scale-102"
+            className="h-20 sm:h-24 md:h-28 lg:h-32 w-auto object-contain filter drop-shadow-md transition-transform duration-300 hover:scale-102"
           />
-          <div className="w-16 h-0.5 bg-[#898A82] mt-4 mb-2 rounded-full"></div>
+          <div className="w-20 h-0.5 bg-[#898A82] mt-4 mb-2 rounded-full"></div>
           <p className="text-xs sm:text-sm font-semibold tracking-wider uppercase text-[#898A82]">
             Sistema Integral de Seguridad Perimetral & Gestión Operativa
           </p>

@@ -43,8 +43,14 @@ function DashboardContent() {
       {/* Si no hay rol activo: Pantalla de Inicio con un solo logo arriba y tarjetas limpias */}
       {!activeRole ? (
         <RoleSelector />
+      ) : activeRole === 'pagina_web' ? (
+        /* Rol Página Web: Sitio Oficial www.mallaesa.com a pantalla completa con navegación responsiva propia */
+        <WebsitePortal
+          activeModule={currentModule}
+          onNavigateModule={setCurrentModule}
+        />
       ) : (
-        /* Si hay rol activo: Dashboard con Cabecera Unificada y Navegación Responsiva */
+        /* Si hay rol activo administrativo/operativo: Dashboard con Cabecera Unificada y Navegación Responsiva */
         <div className="min-h-screen bg-[#F8F9F8] flex flex-col selection:bg-neutral-800 selection:text-white">
           {/* Cabecera Institucional Unificada */}
           <Header />
@@ -59,12 +65,6 @@ function DashboardContent() {
 
             {/* Área de Trabajo de Alto Rendimiento (Sin pestañas duplicadas) */}
             <main className="flex-1 p-3.5 sm:p-6 md:p-8 overflow-y-auto">
-              {activeRole === 'pagina_web' && (
-                <WebsitePortal
-                  activeModule={currentModule}
-                  onNavigateModule={setCurrentModule}
-                />
-              )}
               {activeRole === 'cliente' && (
                 <ClientPortal
                   activeModule={currentModule}
