@@ -22,7 +22,10 @@ import {
   Phone
 } from 'lucide-react';
 
-export const OperationsPortal: React.FC<{ activeModule: string }> = ({ activeModule }) => {
+export const OperationsPortal: React.FC<{
+  activeModule: string;
+  onNavigateModule?: (module: string) => void;
+}> = ({ activeModule, onNavigateModule }) => {
   const {
     projects,
     workOrders,
@@ -316,9 +319,7 @@ export const OperationsPortal: React.FC<{ activeModule: string }> = ({ activeMod
                     <button
                       onClick={() => {
                         setActiveOTForReport(ot);
-                        // Click module campo
-                        const btn = document.querySelector('button[data-module="campo"]') as HTMLButtonElement;
-                        if (btn) btn.click();
+                        if (onNavigateModule) onNavigateModule('campo');
                       }}
                       className="px-4 py-2 bg-black hover:bg-stone-800 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5"
                     >

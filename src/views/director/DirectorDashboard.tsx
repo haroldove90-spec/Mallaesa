@@ -16,7 +16,10 @@ import {
   DollarSign
 } from 'lucide-react';
 
-export const DirectorDashboard: React.FC<{ activeModule: string }> = ({ activeModule }) => {
+export const DirectorDashboard: React.FC<{
+  activeModule: string;
+  onNavigateModule?: (module: string) => void;
+}> = ({ activeModule, onNavigateModule }) => {
   const {
     projects,
     formalQuotes,
@@ -253,8 +256,7 @@ export const DirectorDashboard: React.FC<{ activeModule: string }> = ({ activeMo
               <div className="pt-4 border-t border-stone-100">
                 <button
                   onClick={() => {
-                    const btn = document.querySelector('button[data-module="aprobaciones"]') as HTMLButtonElement;
-                    if (btn) btn.click();
+                    if (onNavigateModule) onNavigateModule('aprobaciones');
                   }}
                   className="w-full py-2 bg-black hover:bg-stone-800 text-white text-xs font-bold rounded-lg transition flex items-center justify-center gap-1"
                 >

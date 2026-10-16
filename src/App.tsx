@@ -3,7 +3,7 @@ import { MallaesaProvider, useMallaesa } from './context/MallaesaContext';
 import { SplashScreen } from './components/SplashScreen';
 import { RoleSelector } from './components/RoleSelector';
 import { Header } from './components/Header';
-import { Navigation, ROLE_MODULES } from './components/Navigation';
+import { Navigation } from './components/Navigation';
 import { ClientPortal } from './views/client/ClientPortal';
 import { DirectorDashboard } from './views/director/DirectorDashboard';
 import { SalesPortal } from './views/sales/SalesPortal';
@@ -38,17 +38,17 @@ function DashboardContent() {
         <SplashScreen onFinish={() => setShowSplash(false)} />
       )}
 
-      {/* Si no hay rol activo: Pantalla de Inicio con Cuadrícula limpia de Roles */}
+      {/* Si no hay rol activo: Pantalla de Inicio con un solo logo arriba y tarjetas limpias */}
       {!activeRole ? (
         <RoleSelector />
       ) : (
-        /* Si hay rol activo: Dashboard con Cabecera Unificada y Navegación */
+        /* Si hay rol activo: Dashboard con Cabecera Unificada y Navegación Responsiva */
         <div className="min-h-screen bg-[#F8F9F8] flex flex-col selection:bg-neutral-800 selection:text-white">
           {/* Cabecera Institucional Unificada */}
           <Header />
 
-          {/* Cuerpo Principal con Sidebar en Escritorio y Área de Trabajo Limpia */}
-          <div className="flex-1 flex max-w-7xl w-full mx-auto pb-20 md:pb-8">
+          {/* Cuerpo Principal con Sidebar en Escritorio y Bottom Bar en Móvil */}
+          <div className="flex-1 flex max-w-7xl w-full mx-auto pb-24 md:pb-8">
             {/* Navegación (Sidebar en escritorio y Bottom Bar en móvil) */}
             <Navigation
               currentModule={currentModule}
@@ -56,21 +56,36 @@ function DashboardContent() {
             />
 
             {/* Área de Trabajo de Alto Rendimiento (Sin pestañas duplicadas) */}
-            <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
+            <main className="flex-1 p-3.5 sm:p-6 md:p-8 overflow-y-auto">
               {activeRole === 'cliente' && (
-                <ClientPortal activeModule={currentModule} />
+                <ClientPortal
+                  activeModule={currentModule}
+                  onNavigateModule={setCurrentModule}
+                />
               )}
               {activeRole === 'director' && (
-                <DirectorDashboard activeModule={currentModule} />
+                <DirectorDashboard
+                  activeModule={currentModule}
+                  onNavigateModule={setCurrentModule}
+                />
               )}
               {activeRole === 'ventas' && (
-                <SalesPortal activeModule={currentModule} />
+                <SalesPortal
+                  activeModule={currentModule}
+                  onNavigateModule={setCurrentModule}
+                />
               )}
               {activeRole === 'operaciones' && (
-                <OperationsPortal activeModule={currentModule} />
+                <OperationsPortal
+                  activeModule={currentModule}
+                  onNavigateModule={setCurrentModule}
+                />
               )}
               {activeRole === 'administracion' && (
-                <AdminPortal activeModule={currentModule} />
+                <AdminPortal
+                  activeModule={currentModule}
+                  onNavigateModule={setCurrentModule}
+                />
               )}
             </main>
           </div>

@@ -20,7 +20,10 @@ import {
   Check
 } from 'lucide-react';
 
-export const AdminPortal: React.FC<{ activeModule: string }> = ({ activeModule }) => {
+export const AdminPortal: React.FC<{
+  activeModule: string;
+  onNavigateModule?: (module: string) => void;
+}> = ({ activeModule, onNavigateModule }) => {
   const {
     projects,
     invoices,

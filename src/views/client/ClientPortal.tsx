@@ -68,7 +68,10 @@ const SERVICE_OPTIONS: { id: ServiceType; label: string; image: string; desc: st
   }
 ];
 
-export const ClientPortal: React.FC<{ activeModule: string }> = ({ activeModule }) => {
+export const ClientPortal: React.FC<{
+  activeModule: string;
+  onNavigateModule?: (module: string) => void;
+}> = ({ activeModule, onNavigateModule }) => {
   const {
     submitClientRequest,
     projects,
@@ -204,6 +207,7 @@ export const ClientPortal: React.FC<{ activeModule: string }> = ({ activeModule 
                   onClick={() => {
                     setSearchFolio(submittedFolio);
                     handleSearchProject(submittedFolio);
+                    if (onNavigateModule) onNavigateModule('estatus');
                   }}
                   className="px-6 py-2.5 bg-black hover:bg-stone-800 text-white rounded-lg font-bold text-sm transition"
                 >
@@ -818,9 +822,7 @@ export const ClientPortal: React.FC<{ activeModule: string }> = ({ activeModule 
                   <button
                     onClick={() => {
                       setServiceType(item.id);
-                      // Switch to questionnaire module
-                      const btn = document.querySelector('button[data-module="cuestionario"]') as HTMLButtonElement;
-                      if (btn) btn.click();
+                      if (onNavigateModule) onNavigateModule('cuestionario');
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     className="w-full py-2 bg-stone-100 hover:bg-black hover:text-white text-black text-xs font-bold rounded-lg transition"

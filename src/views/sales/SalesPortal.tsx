@@ -24,7 +24,10 @@ import {
   Download
 } from 'lucide-react';
 
-export const SalesPortal: React.FC<{ activeModule: string }> = ({ activeModule }) => {
+export const SalesPortal: React.FC<{
+  activeModule: string;
+  onNavigateModule?: (module: string) => void;
+}> = ({ activeModule, onNavigateModule }) => {
   const {
     requests,
     formalQuotes,
@@ -322,9 +325,7 @@ export const SalesPortal: React.FC<{ activeModule: string }> = ({ activeModule }
                       <button
                         onClick={() => {
                           handleSelectRequestToQuote(req);
-                          // Click module cotizador
-                          const btn = document.querySelector('button[data-module="cotizador"]') as HTMLButtonElement;
-                          if (btn) btn.click();
+                          if (onNavigateModule) onNavigateModule('cotizador');
                         }}
                         className="w-full py-2 bg-black hover:bg-stone-800 text-white text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5"
                       >
