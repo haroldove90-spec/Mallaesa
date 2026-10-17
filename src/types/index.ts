@@ -1,4 +1,4 @@
-export type RoleType = 'pagina_web' | 'cliente' | 'director' | 'ventas' | 'operaciones' | 'administracion';
+export type RoleType = 'pagina_web' | 'cotizador' | 'cliente' | 'director' | 'ventas' | 'operaciones' | 'administracion';
 
 export interface RoleConfig {
   id: RoleType;
@@ -75,6 +75,11 @@ export interface FormalQuote {
   sentAt?: string;
   approvedAt?: string;
   clientSignature?: string;
+  rawMaterials?: QuoteItem[];
+  rawMaterialsCost?: number;
+  profitMarginPercent?: number;
+  profitAmount?: number;
+  clientConcepts?: QuoteItem[];
 }
 
 export interface Project {

@@ -8,6 +8,7 @@ import {
   TrendingUp,
   Truck,
   Receipt,
+  Calculator,
   ArrowRight
 } from 'lucide-react';
 
@@ -26,9 +27,15 @@ const ROLES: RoleOption[] = [
     icon: <Globe className="w-8 h-8 md:w-9 md:h-9 text-[#898A82] group-hover:text-black transition-colors" />
   },
   {
+    id: 'cotizador',
+    title: 'Cotizador',
+    subtitle: 'Cotizador & Catálogo Oficial',
+    icon: <Calculator className="w-8 h-8 md:w-9 md:h-9 text-[#898A82] group-hover:text-black transition-colors" />
+  },
+  {
     id: 'cliente',
     title: 'Cliente',
-    subtitle: 'Portal Público & Cotizaciones',
+    subtitle: 'Portal Público & Proyectos',
     icon: <User className="w-8 h-8 md:w-9 md:h-9 text-[#898A82] group-hover:text-black transition-colors" />
   },
   {
@@ -76,8 +83,8 @@ export const RoleSelector: React.FC = () => {
           </p>
         </div>
 
-        {/* Cuadrícula de Roles: 2 Columnas Móvil / 3 Columnas Tablet / 6 Columnas Escritorio (Totalmente Simétrico) */}
-        <div className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5 sm:gap-4 md:gap-4.5">
+        {/* Cuadrícula de Roles: 2 Columnas Móvil / 3-4 Columnas Tablet / 7 Columnas Escritorio */}
+        <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-3.5 md:gap-4">
           {ROLES.map((role) => (
             <button
               key={role.id}

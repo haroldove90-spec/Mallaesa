@@ -23,7 +23,8 @@ import {
   Layers,
   Home,
   PhoneCall,
-  Globe
+  Globe,
+  History
 } from 'lucide-react';
 
 export interface NavItem {
@@ -41,19 +42,27 @@ export const ROLE_MODULES: Record<RoleType, NavItem[]> = {
     { id: 'nosotros', label: 'Nosotros', icon: <ShieldCheck className="w-5 h-5" /> },
     { id: 'contacto', label: 'Cotizador Inteligente', icon: <PhoneCall className="w-5 h-5" /> }
   ],
+  cotizador: [
+    { id: 'cotizador', label: 'Cotizador', icon: <Calculator className="w-5 h-5" /> },
+    { id: 'catalogo', label: 'Catálogo', icon: <Grid className="w-5 h-5" /> },
+    { id: 'historial', label: 'Historial de Cotizaciones', icon: <History className="w-5 h-5" /> }
+  ],
   cliente: [
-    { id: 'cuestionario', label: 'Cotizar en Línea', icon: <Calculator className="w-5 h-5" /> },
-    { id: 'estatus', label: 'Estatus de Proyecto', icon: <Search className="w-5 h-5" /> },
-    { id: 'catalogo', label: 'Sistemas & Mallas', icon: <Grid className="w-5 h-5" /> }
+    { id: 'cotizador', label: 'Cotizador', icon: <Calculator className="w-5 h-5" /> },
+    { id: 'catalogo', label: 'Catálogo', icon: <Grid className="w-5 h-5" /> },
+    { id: 'estatus', label: 'Estatus de Proyecto', icon: <Search className="w-5 h-5" /> }
   ],
   director: [
     { id: 'kpis', label: 'Dashboard Ejecutivo', icon: <BarChart3 className="w-5 h-5" /> },
+    { id: 'historial', label: 'Historial de Cotizaciones', icon: <History className="w-5 h-5" /> },
     { id: 'aprobaciones', label: 'Aprobaciones Clave', icon: <CheckSquare className="w-5 h-5" /> },
     { id: 'financiero', label: 'Reportes Financieros', icon: <DollarSign className="w-5 h-5" /> }
   ],
   ventas: [
     { id: 'solicitudes', label: 'Bandeja Cuestionarios', icon: <Inbox className="w-5 h-5" /> },
-    { id: 'cotizador', label: 'Generador Cotizaciones', icon: <FileText className="w-5 h-5" /> },
+    { id: 'cotizador', label: 'Cotizador', icon: <Calculator className="w-5 h-5" /> },
+    { id: 'catalogo', label: 'Catálogo', icon: <Grid className="w-5 h-5" /> },
+    { id: 'historial', label: 'Historial de Cotizaciones', icon: <History className="w-5 h-5" /> },
     { id: 'crm', label: 'CRM Prospectos', icon: <Kanban className="w-5 h-5" /> }
   ],
   operaciones: [

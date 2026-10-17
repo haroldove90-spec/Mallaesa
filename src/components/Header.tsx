@@ -9,6 +9,10 @@ const ROLE_LABELS: Record<string, { title: string; badge: string }> = {
     title: 'Sitio Web Oficial www.mallaesa.com',
     badge: 'Página Web'
   },
+  cotizador: {
+    title: 'Cotizador & Catálogo Oficial',
+    badge: 'Cotizador'
+  },
   cliente: {
     title: 'Portal de Clientes',
     badge: 'Público'

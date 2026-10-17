@@ -21,8 +21,12 @@ import {
   Clock,
   UserCheck,
   ShieldCheck,
-  Download
+  Download,
+  Grid
 } from 'lucide-react';
+import { OfficialQuoteCalculatorView } from '../../components/OfficialQuoteCalculatorView';
+import { OfficialCatalogView } from '../../components/OfficialCatalogView';
+import { QuoteHistoryView } from '../../components/QuoteHistoryView';
 
 export const SalesPortal: React.FC<{
   activeModule: string;
@@ -47,6 +51,7 @@ export const SalesPortal: React.FC<{
   const [discountPercent, setDiscountPercent] = useState<number>(0);
   const [estimatedDays, setEstimatedDays] = useState<number>(3);
   const [activePreviewQuote, setActivePreviewQuote] = useState<FormalQuote | null>(null);
+  const [quoteSubMode, setQuoteSubMode] = useState<'oficial' | 'leads'>('oficial');
 
   // Search in CRM
   const [crmSearch, setCrmSearch] = useState('');
@@ -343,41 +348,80 @@ export const SalesPortal: React.FC<{
 
       {/* ========================================================
           MÓDULO 2: GENERADOR DE COTIZACIONES EN LÍNEA
+      {/* ========================================================
+          MÓDULO 2: COTIZADOR (8 CATEGORÍAS OFICIALES O LEADS)
          ======================================================== */}
       {activeModule === 'cotizador' && (
-        <div className="max-w-6xl mx-auto space-y-6">
-          <div className="bg-white border border-stone-200 rounded-xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-bold text-black">
-                Generador Técnico de Presupuestos MALLAESA
-              </h2>
-              <p className="text-xs text-stone-600 mt-1">
-                Estructuración paramétrica de materiales, mano de obra, viáticos y condiciones comerciales.
-              </p>
-            </div>
-
-            {/* Selector de Solicitud */}
+        <div className="space-y-6">
+          {/* Selector de Modo de Cotización para Ventas */}
+          <div className="bg-white border border-stone-200 rounded-2xl p-3 flex items-center justify-between gap-3 flex-wrap shadow-xs">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-stone-700">Solicitud:</span>
-              <select
-                value={selectedRequestId}
-                onChange={(e) => {
-                  const req = requests.find(r => r.id === e.target.value);
-                  if (req) handleSelectRequestToQuote(req);
-                }}
-                className="text-xs font-semibold p-2 bg-stone-50 border border-stone-300 rounded-lg focus:outline-hidden"
+              <button
+                type="button"
+                onClick={() => setQuoteSubMode('oficial')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                  quoteSubMode === 'oficial'
+                    ? 'bg-black text-white shadow-xs'
+                    : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                }`}
               >
-                {requests.map(r => (
-                  <option key={r.id} value={r.id}>
-                    {r.folio} - {r.clientName} ({r.linearMeters}m)
-                  </option>
-                ))}
-              </select>
+                <Grid className="w-3.5 h-3.5" />
+                <span>Cotizador por Categorías Oficiales (8 Tarjetas & Modal)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuoteSubMode('leads')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                  quoteSubMode === 'leads'
+                    ? 'bg-black text-white shadow-xs'
+                    : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                }`}
+              >
+                <Calculator className="w-3.5 h-3.5" />
+                <span>Generador Paramétrico por Solicitud de Lead</span>
+              </button>
             </div>
+            <span className="text-[11px] font-semibold text-stone-500 hidden md:inline">
+              MALLA INDE / MALLAESA (Lista Oficial 01/2023)
+            </span>
           </div>
 
-          {currentRequest && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {quoteSubMode === 'oficial' ? (
+            <OfficialQuoteCalculatorView />
+          ) : (
+            <div className="max-w-6xl mx-auto space-y-6">
+              <div className="bg-white border border-stone-200 rounded-xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold text-black">
+                    Generador Técnico de Presupuestos MALLAESA
+                  </h2>
+                  <p className="text-xs text-stone-600 mt-1">
+                    Estructuración paramétrica de materiales, mano de obra, viáticos y condiciones comerciales.
+                  </p>
+                </div>
+
+                {/* Selector de Solicitud */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-stone-700">Solicitud:</span>
+                  <select
+                    value={selectedRequestId}
+                    onChange={(e) => {
+                      const req = requests.find(r => r.id === e.target.value);
+                      if (req) handleSelectRequestToQuote(req);
+                    }}
+                    className="text-xs font-semibold p-2 bg-stone-50 border border-stone-300 rounded-lg focus:outline-hidden"
+                  >
+                    {requests.map(r => (
+                      <option key={r.id} value={r.id}>
+                        {r.folio} - {r.clientName} ({r.linearMeters}m)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {currentRequest && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Columna Izquierda: Calculadora y Desglose de Materiales */}
               <div className="lg:col-span-2 space-y-5">
                 <div className="bg-white border border-stone-200 rounded-xl p-5 shadow-xs">
@@ -582,7 +626,33 @@ export const SalesPortal: React.FC<{
               </div>
             </div>
           )}
+            </div>
+          )}
         </div>
+      )}
+
+      {/* ========================================================
+          MÓDULO: CATÁLOGO OFICIAL POR CATEGORÍAS (LISTA DE PRECIOS)
+         ======================================================== */}
+      {activeModule === 'catalogo' && (
+        <OfficialCatalogView
+          onGoToQuote={() => {
+            if (onNavigateModule) onNavigateModule('cotizador');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
+      )}
+
+      {/* ========================================================
+          MÓDULO: HISTORIAL DE COTIZACIONES
+         ======================================================== */}
+      {activeModule === 'historial' && (
+        <QuoteHistoryView
+          onGoToQuote={() => {
+            if (onNavigateModule) onNavigateModule('cotizador');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
       )}
 
       {/* ========================================================

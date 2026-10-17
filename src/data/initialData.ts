@@ -224,6 +224,58 @@ export const INITIAL_REQUESTS: QuoteRequest[] = [
 
 export const INITIAL_FORMAL_QUOTES: FormalQuote[] = [
   {
+    id: 'quote-inde-7420',
+    requestId: 'req-0845',
+    folio: 'COT-INDE-7420',
+    clientName: 'Constructora Regiomontana del Norte S.A.',
+    clientEmail: 'compras@crnorte.com.mx',
+    clientPhone: '81-8399-2041',
+    projectAddress: 'Parque Industrial Mitras Lote 14, García, N.L.',
+    serviceType: 'malla_ciclonica',
+    linearMeters: 20,
+    heightMeters: 2.0,
+    items: [
+      {
+        id: 'c-1',
+        description: 'MALLA GALV. CALIBRE 12.5 ABERTURA 64 ALTURA 2',
+        quantity: 1,
+        unit: 'Lote / Suministro',
+        unitPrice: 1200,
+        total: 1200
+      }
+    ],
+    clientConcepts: [
+      {
+        id: 'c-1',
+        description: 'MALLA GALV. CALIBRE 12.5 ABERTURA 64 ALTURA 2',
+        quantity: 1,
+        unit: 'Lote / Suministro',
+        unitPrice: 1200,
+        total: 1200
+      }
+    ],
+    rawMaterials: [
+      { id: 'rm-1', description: 'Lámina Galvanizada R-72 Calibre 26 (Tramo)', quantity: 1, unit: 'Tramo', unitPrice: 850, total: 850 },
+      { id: 'rm-2', description: 'Abrazaderas de tensión y arranque 48mm', quantity: 2, unit: 'Pieza', unitPrice: 75, total: 150 }
+    ],
+    rawMaterialsCost: 1000,
+    profitMarginPercent: 20,
+    profitAmount: 200,
+    subtotal: 1200,
+    discountPercent: 0,
+    discountApproved: true,
+    discountApprovalPending: false,
+    discountAmount: 0,
+    iva: 192,
+    total: 1392,
+    advanceRequired: 696,
+    balanceRemaining: 696,
+    estimatedDays: 2,
+    status: 'enviada',
+    createdAt: '2026-10-17 11:30',
+    sentAt: '2026-10-17 11:35'
+  },
+  {
     id: 'quote-0843',
     requestId: 'req-0843',
     folio: 'COT-2026-0843',

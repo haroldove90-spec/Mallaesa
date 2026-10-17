@@ -10,6 +10,9 @@ import { DirectorDashboard } from './views/director/DirectorDashboard';
 import { SalesPortal } from './views/sales/SalesPortal';
 import { OperationsPortal } from './views/operations/OperationsPortal';
 import { AdminPortal } from './views/admin/AdminPortal';
+import { OfficialQuoteCalculatorView } from './components/OfficialQuoteCalculatorView';
+import { OfficialCatalogView } from './components/OfficialCatalogView';
+import { QuoteHistoryView } from './components/QuoteHistoryView';
 
 function DashboardContent() {
   const { activeRole } = useMallaesa();
@@ -23,7 +26,8 @@ function DashboardContent() {
     if (activeRole) {
       const defaultModules: Record<string, string> = {
         pagina_web: 'inicio',
-        cliente: 'cuestionario',
+        cotizador: 'cotizador',
+        cliente: 'cotizador',
         director: 'kpis',
         ventas: 'solicitudes',
         operaciones: 'ordenes',
@@ -65,6 +69,25 @@ function DashboardContent() {
 
             {/* Área de Trabajo de Alto Rendimiento (Sin pestañas duplicadas) */}
             <main className="flex-1 p-3.5 sm:p-6 md:p-8 overflow-y-auto">
+              {activeRole === 'cotizador' && (
+                <>
+                  {currentModule === 'cotizador' && (
+                    <OfficialQuoteCalculatorView
+                      onGoToHistory={() => setCurrentModule('historial')}
+                    />
+                  )}
+                  {currentModule === 'catalogo' && (
+                    <OfficialCatalogView
+                      onGoToQuote={() => setCurrentModule('cotizador')}
+                    />
+                  )}
+                  {currentModule === 'historial' && (
+                    <QuoteHistoryView
+                      onGoToQuote={() => setCurrentModule('cotizador')}
+                    />
+                  )}
+                </>
+              )}
               {activeRole === 'cliente' && (
                 <ClientPortal
                   activeModule={currentModule}

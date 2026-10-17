@@ -73,7 +73,13 @@ interface MallaesaContextType {
     advance50: number;
     balance50: number;
     estimatedWorkDays: number;
+    rawMaterials?: QuoteItem[];
+    rawMaterialsCost?: number;
+    profitMarginPercent?: number;
+    profitAmount?: number;
+    clientConcepts?: QuoteItem[];
   }) => void;
+  deleteFormalQuote: (quoteId: string) => void;
 
   // Actions for Phase 2: Sales
   createFormalQuote: (requestId: string, items: QuoteItem[], discountPercent: number, estimatedDays: number) => FormalQuote;
@@ -331,6 +337,11 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     advance50: number;
     balance50: number;
     estimatedWorkDays: number;
+    rawMaterials?: QuoteItem[];
+    rawMaterialsCost?: number;
+    profitMarginPercent?: number;
+    profitAmount?: number;
+    clientConcepts?: QuoteItem[];
   }) => {
     const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
     const reqId = `req-${Date.now()}`;
@@ -364,7 +375,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       serviceType: data.serviceType,
       linearMeters: data.linearMeters,
       heightMeters: data.heightMeters,
-      items: data.items,
+      items: (data.clientConcepts && data.clientConcepts.length > 0) ? data.clientConcepts : data.items,
       subtotal: data.subtotal,
       discountPercent: 0,
       discountApproved: true,
@@ -377,7 +388,12 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       estimatedDays: data.estimatedWorkDays,
       status: 'enviada',
       createdAt: now,
-      sentAt: now
+      sentAt: now,
+      rawMaterials: data.rawMaterials || data.items,
+      rawMaterialsCost: data.rawMaterialsCost || data.subtotal,
+      profitMarginPercent: data.profitMarginPercent ?? 20,
+      profitAmount: data.profitAmount || 0,
+      clientConcepts: data.clientConcepts
     };
 
     const newProj: Project = {
@@ -407,6 +423,10 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setRequests(prev => [newReq, ...prev.filter(r => r.folio !== data.folio)]);
     setFormalQuotes(prev => [newQuote, ...prev.filter(q => q.folio !== data.folio)]);
     setProjects(prev => [newProj, ...prev.filter(p => p.folio !== data.folio)]);
+  };
+
+  const deleteFormalQuote = (quoteId: string) => {
+    setFormalQuotes(prev => prev.filter(q => q.id !== quoteId));
   };
 
   // Phase 2: Sales creates quotation
@@ -857,6 +877,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         restoreDemoData,
         submitClientRequest,
         saveIntelligentQuote,
+        deleteFormalQuote,
         createFormalQuote,
         requestDiscountApproval,
         sendQuoteToClient,

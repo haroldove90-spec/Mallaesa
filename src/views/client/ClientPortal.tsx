@@ -27,8 +27,11 @@ import {
   Calculator,
   PlusCircle,
   FileCheck2,
-  Info
+  Info,
+  Grid
 } from 'lucide-react';
+import { OfficialQuoteCalculatorView } from '../../components/OfficialQuoteCalculatorView';
+import { OfficialCatalogView } from '../../components/OfficialCatalogView';
 
 const SERVICE_OPTIONS: { id: ServiceType; label: string; image: string; desc: string }[] = [
   {
@@ -116,6 +119,7 @@ export const ClientPortal: React.FC<{
   // Approval modal in client view
   const [clientSignatureInput, setClientSignatureInput] = useState('');
   const [isApproving, setIsApproving] = useState(false);
+  const [quoteSubMode, setQuoteSubMode] = useState<'oficial' | 'parametrico'>('oficial');
 
   // Live dynamic price preview computation
   const liveQuote = useMemo(() => {
@@ -226,10 +230,47 @@ export const ClientPortal: React.FC<{
   return (
     <div className="space-y-6">
       {/* ========================================================
-          MÓDULO 1: COTIZADOR INTELIGENTE CON PRECIO EXACTO
+          MÓDULO 1: COTIZADOR (8 CATEGORÍAS OFICIALES O PARAMÉTRICO)
          ======================================================== */}
-      {activeModule === 'cuestionario' && (
-        <div className="max-w-4xl mx-auto space-y-6">
+      {(activeModule === 'cotizador' || activeModule === 'cuestionario') && (
+        <div className="space-y-6">
+          {/* Selector de Modo de Cotización */}
+          <div className="bg-white border border-stone-200 rounded-2xl p-3 flex items-center justify-between gap-3 flex-wrap shadow-xs">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setQuoteSubMode('oficial')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                  quoteSubMode === 'oficial'
+                    ? 'bg-black text-white shadow-xs'
+                    : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                }`}
+              >
+                <Grid className="w-3.5 h-3.5" />
+                <span>Cotizador por Categorías Oficiales (8 Tarjetas & Modal)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuoteSubMode('parametrico')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                  quoteSubMode === 'parametrico'
+                    ? 'bg-black text-white shadow-xs'
+                    : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                }`}
+              >
+                <Calculator className="w-3.5 h-3.5" />
+                <span>Calculadora por Metros Lineales de Cerca</span>
+              </button>
+            </div>
+            <span className="text-[11px] font-semibold text-stone-500 hidden md:inline">
+              MALLA INDE / MALLAESA (Lista Oficial 01/2023)
+            </span>
+          </div>
+
+          {quoteSubMode === 'oficial' ? (
+            <OfficialQuoteCalculatorView />
+          ) : (
+            <div className="max-w-4xl mx-auto space-y-6">
           {/* Tarjeta de bienvenida limpia */}
           <div className="bg-white border border-stone-200 rounded-xl p-6 shadow-xs">
             <div className="flex items-start justify-between flex-wrap gap-4">
@@ -724,6 +765,8 @@ export const ClientPortal: React.FC<{
               </div>
             </form>
           )}
+            </div>
+          )}
         </div>
       )}
 
@@ -953,59 +996,15 @@ export const ClientPortal: React.FC<{
       )}
 
       {/* ========================================================
-          MÓDULO 3: CATÁLOGO DE SISTEMAS PERIMETRALES
+          MÓDULO 3: CATÁLOGO OFICIAL POR CATEGORÍAS (PDF OFICIAL)
          ======================================================== */}
       {activeModule === 'catalogo' && (
-        <div className="max-w-6xl mx-auto space-y-6">
-          <div className="bg-white border border-stone-200 rounded-xl p-6 shadow-xs">
-            <h2 className="text-xl font-bold text-black">
-              Catálogo de Soluciones de Seguridad Perimetral MALLAESA
-            </h2>
-            <p className="text-xs text-stone-600 mt-1">
-              Fabricación con acero galvanizado por inmersión en caliente bajo norma ASTM A392.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {SERVICE_OPTIONS.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-xs hover:border-black transition flex flex-col justify-between"
-              >
-                <div>
-                  <img
-                    src={item.image}
-                    alt={item.label}
-                    className="h-44 w-full object-cover"
-                  />
-                  <div className="p-5">
-                    <h3 className="font-bold text-base text-black">{item.label}</h3>
-                    <p className="text-xs text-stone-600 mt-2 leading-relaxed">
-                      {item.desc}
-                    </p>
-                    <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-xs text-stone-500">
-                      <span>Garantía: 3 a 5 años</span>
-                      <span className="font-semibold text-black">Instalación Inmediata</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-5 pt-0">
-                  <button
-                    onClick={() => {
-                      setServiceType(item.id);
-                      if (onNavigateModule) onNavigateModule('cuestionario');
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className="w-full py-2 bg-stone-100 hover:bg-black hover:text-white text-black text-xs font-bold rounded-lg transition"
-                  >
-                    Cotizar este Sistema
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <OfficialCatalogView
+          onGoToQuote={() => {
+            if (onNavigateModule) onNavigateModule('cotizador');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
       )}
     </div>
   );

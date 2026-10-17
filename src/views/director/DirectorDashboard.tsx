@@ -15,6 +15,7 @@ import {
   UserCheck,
   DollarSign
 } from 'lucide-react';
+import { QuoteHistoryView } from '../../components/QuoteHistoryView';
 
 export const DirectorDashboard: React.FC<{
   activeModule: string;
@@ -501,6 +502,11 @@ export const DirectorDashboard: React.FC<{
             </div>
           </div>
         </div>
+      )}
+
+      {/* MÓDULO: HISTORIAL DE COTIZACIONES OFICIALES */}
+      {activeModule === 'historial' && (
+        <QuoteHistoryView />
       )}
     </div>
   );

@@ -43,6 +43,11 @@ export interface IntelligentQuoteResult {
   balance50: number;
   estimatedWorkDays: number;
   warrantyYears: number;
+  rawMaterials?: QuoteItem[];
+  rawMaterialsCost?: number;
+  profitMarginPercent?: number;
+  profitAmount?: number;
+  clientConcepts?: QuoteItem[];
 }
 
 const SERVICE_LABELS: Record<ServiceType, string> = {
@@ -559,11 +564,15 @@ export function exportQuoteToPdf(quote: IntelligentQuoteResult) {
   doc.setFillColor(0, 0, 0);
   doc.rect(18, y, pageWidth - 36, 7, 'F');
 
+  const itemsToRender = (quote.clientConcepts && quote.clientConcepts.length > 0)
+    ? quote.clientConcepts
+    : quote.items;
+
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(255, 255, 255);
   doc.text('#', 21, y + 4.8);
-  doc.text('DESCRIPCIÓN DEL CONCEPTO / MATERIAL', 28, y + 4.8);
+  doc.text('CONCEPTO / PRODUCTO COTIZADO AL CLIENTE', 28, y + 4.8);
   doc.text('CANT.', pageWidth - 80, y + 4.8);
   doc.text('UNIDAD', pageWidth - 65, y + 4.8);
   doc.text('P. UNIT.', pageWidth - 45, y + 4.8);
@@ -575,7 +584,7 @@ export function exportQuoteToPdf(quote: IntelligentQuoteResult) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
 
-  quote.items.forEach((item, index) => {
+  itemsToRender.forEach((item, index) => {
     const isEven = index % 2 === 0;
     if (isEven) {
       doc.setFillColor(249, 249, 248);
@@ -586,7 +595,7 @@ export function exportQuoteToPdf(quote: IntelligentQuoteResult) {
     doc.text(String(index + 1), 21, y + 4.4);
 
     // Truncate long descriptions if needed
-    const desc = item.description.length > 55 ? item.description.substring(0, 52) + '...' : item.description;
+    const desc = item.description.length > 58 ? item.description.substring(0, 55) + '...' : item.description;
     doc.setTextColor(20, 20, 20);
     doc.text(desc, 28, y + 4.4);
 
