@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Layers,
   Square,
@@ -147,20 +147,52 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
     return Number((rawMaterialsCost + profitAmount).toFixed(2));
   }, [rawMaterialsCost, profitAmount]);
 
-  // Helper para auto-asignar el subtotal sugerido al primer concepto o distribuirlo
+  // Sincronización AUTOMÁTICA: Pone automáticamente el precio sugerido de venta en el importe total del concepto
+  useEffect(() => {
+    if (calculatedSaleSubtotal > 0) {
+      setClientConcepts(prev => {
+        if (prev.length === 1) {
+          const single = prev[0];
+          return [
+            {
+              ...single,
+              unitPrice: Number((calculatedSaleSubtotal / (single.quantity || 1)).toFixed(2)),
+              total: calculatedSaleSubtotal
+            }
+          ];
+        } else if (prev.length > 1) {
+          const currentSum = prev.reduce((acc, c) => acc + (c.total || 0), 0);
+          if (currentSum === 0) {
+            const split = Number((calculatedSaleSubtotal / prev.length).toFixed(2));
+            return prev.map((c, i) => {
+              const isLast = i === prev.length - 1;
+              const assigned = isLast ? Number((calculatedSaleSubtotal - split * (prev.length - 1)).toFixed(2)) : split;
+              return {
+                ...c,
+                unitPrice: Number((assigned / (c.quantity || 1)).toFixed(2)),
+                total: assigned
+              };
+            });
+          }
+        }
+        return prev;
+      });
+    }
+  }, [calculatedSaleSubtotal]);
+
+  // Helper para re-sincronizar o repartir el subtotal sugerido manualmente si se desea
   const handleAutoAssignPrice = () => {
     if (clientConcepts.length === 1) {
       const single = clientConcepts[0];
       setClientConcepts([
         {
           ...single,
-          quantity: 1,
-          unitPrice: calculatedSaleSubtotal,
+          unitPrice: Number((calculatedSaleSubtotal / (single.quantity || 1)).toFixed(2)),
           total: calculatedSaleSubtotal
         }
       ]);
     } else if (clientConcepts.length > 1) {
-      // Divide equitativamente
+      // Divide equitativamente entre los conceptos
       const split = Number((calculatedSaleSubtotal / clientConcepts.length).toFixed(2));
       setClientConcepts(
         clientConcepts.map((c, i) => {
@@ -206,12 +238,20 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
         if (item.id !== id) return item;
 
         const updated = { ...item, [field]: value };
-        if (field === 'quantity' || field === 'unitPrice') {
-          const qty = field === 'quantity' ? Number(value) : item.quantity;
-          const price = field === 'unitPrice' ? Number(value) : item.unitPrice;
-          updated.total = Number((qty * price).toFixed(2));
+        if (field === 'quantity') {
+          const qty = Math.max(1, Number(value) || 1);
+          updated.quantity = qty;
+          if (item.total > 0) {
+            updated.unitPrice = Number((item.total / qty).toFixed(2));
+          } else if (item.unitPrice > 0) {
+            updated.total = Number((qty * item.unitPrice).toFixed(2));
+          }
+        } else if (field === 'unitPrice') {
+          const price = Number(value) || 0;
+          updated.unitPrice = price;
+          updated.total = Number(((item.quantity || 1) * price).toFixed(2));
         } else if (field === 'total') {
-          const tot = Number(value);
+          const tot = Number(value) || 0;
           updated.total = tot;
           updated.unitPrice = Number((tot / (item.quantity || 1)).toFixed(2));
         }
@@ -317,6 +357,13 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
 
     saveIntelligentQuote(result);
     setGeneratedQuoteResult(result);
+
+    // Descarga automática inmediata del archivo PDF oficial para el cliente
+    try {
+      exportQuoteToPdf(result);
+    } catch (pdfErr) {
+      console.error('Error al generar y descargar automáticamente el PDF:', pdfErr);
+    }
 
     try {
       confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 } });
@@ -828,20 +875,20 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={handleAutoAssignPrice}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
-                  title="Asigna automáticamente el importe calculado (materia prima + ganancia del 20%)"
+                  className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                  title="Vuelve a colocar el precio sugerido de venta (materia prima + ganancia del 20%)"
                 >
                   <DollarSign className="w-3.5 h-3.5" />
-                  <span>Asignar Total con Ganancia (${calculatedSaleSubtotal.toFixed(2)})</span>
+                  <span>Re-sincronizar Precio (${calculatedSaleSubtotal.toFixed(2)})</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleAddConceptRow}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-black hover:bg-stone-800 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-black hover:bg-stone-800 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5 text-emerald-400" />
                   <span>+ Agregar Otro Concepto</span>
@@ -887,9 +934,17 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
                   className="bg-stone-50 border border-stone-300 hover:border-black rounded-xl p-4 sm:p-5 space-y-3 transition"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold px-2 py-0.5 bg-black text-white rounded">
-                      Concepto #{index + 1} para el Cliente
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold px-2 py-0.5 bg-black text-white rounded">
+                        Concepto #{index + 1} para el Cliente
+                      </span>
+                      {calculatedSaleSubtotal > 0 && (
+                        <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-700" />
+                          Precio sugerido cargado automáticamente
+                        </span>
+                      )}
+                    </div>
                     {clientConcepts.length > 1 && (
                       <button
                         type="button"
@@ -942,17 +997,24 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
                     </div>
 
                     <div className="lg:col-span-2">
-                      <label className="block font-bold text-stone-800 mb-1">Importe Total ($ MXN) *</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block font-bold text-stone-800">Importe Total *</label>
+                        {calculatedSaleSubtotal > 0 && (
+                          <span className="text-[10px] text-emerald-700 font-mono font-bold" title="Precio Sugerido">
+                            Sug: ${calculatedSaleSubtotal.toFixed(0)}
+                          </span>
+                        )}
+                      </div>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-stone-500">$</span>
                         <input
                           type="number"
                           step="0.01"
                           required
-                          value={concept.total || ''}
+                          value={concept.total > 0 ? concept.total : (calculatedSaleSubtotal > 0 ? calculatedSaleSubtotal : '')}
                           onChange={e => handleConceptChange(concept.id, 'total', e.target.value)}
                           placeholder={calculatedSaleSubtotal.toFixed(2)}
-                          className="w-full pl-7 pr-3 py-2.5 bg-white border border-stone-300 rounded-lg text-black font-mono font-bold focus:outline-hidden focus:border-black"
+                          className="w-full pl-7 pr-3 py-2.5 bg-white border-2 border-emerald-500 focus:border-black rounded-lg text-black font-mono font-black focus:outline-hidden"
                         />
                       </div>
                     </div>
@@ -961,33 +1023,33 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
               ))}
             </div>
 
-            {/* Totales y Botón Generar PDF */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 sm:p-6 bg-stone-900 text-white rounded-xl">
-              <div className="space-y-1 text-center sm:text-left">
-                <div className="flex items-center gap-4 text-xs text-stone-300 flex-wrap justify-center sm:justify-start">
-                  <span>Materia Prima: <strong>${rawMaterialsCost.toFixed(2)}</strong></span>
-                  <span>|</span>
+            {/* Totales y Botón Generar Cotización (Diseño Responsivo Optimizado) */}
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-5 p-5 sm:p-6 bg-stone-900 text-white rounded-2xl shadow-xl">
+              <div className="space-y-1.5 text-center lg:text-left flex-1">
+                <div className="flex items-center gap-2 sm:gap-3 text-xs text-stone-300 flex-wrap justify-center lg:justify-start font-mono">
+                  <span>Materia Prima: <strong className="text-white">${rawMaterialsCost.toFixed(2)}</strong></span>
+                  <span className="text-stone-600 hidden sm:inline">•</span>
                   <span className="text-emerald-400 font-bold">Ganancia (+{profitMarginPercent}%): <strong>+${profitAmount.toFixed(2)}</strong></span>
-                  <span>|</span>
-                  <span>Subtotal: <strong>${clientSubtotal.toFixed(2)}</strong></span>
-                  <span>|</span>
-                  <span>IVA 16%: <strong>${iva.toFixed(2)}</strong></span>
+                  <span className="text-stone-600 hidden sm:inline">•</span>
+                  <span>Subtotal: <strong className="text-white">${clientSubtotal.toFixed(2)}</strong></span>
+                  <span className="text-stone-600 hidden sm:inline">•</span>
+                  <span>IVA 16%: <strong className="text-white">${iva.toFixed(2)}</strong></span>
                 </div>
-                <div className="text-2xl sm:text-3xl font-black font-mono text-white">
+                <div className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight">
                   Total Cotización Cliente: ${total.toFixed(2)} <span className="text-xs font-normal text-stone-400">MXN</span>
                 </div>
-                <div className="text-[11px] text-stone-400">
-                  Anticipo 50%: <strong>${advance50.toFixed(2)} MXN</strong> • Saldo a la entrega: <strong>${balance50.toFixed(2)} MXN</strong>
+                <div className="text-[11px] sm:text-xs text-stone-400">
+                  Anticipo 50%: <strong className="text-white">${advance50.toFixed(2)} MXN</strong> • Saldo a la entrega: <strong className="text-white">${balance50.toFixed(2)} MXN</strong>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="w-full lg:w-auto shrink-0 flex items-center justify-center">
                 <button
                   type="submit"
-                  className="w-full sm:w-auto px-7 py-4 bg-white text-black hover:bg-stone-100 rounded-xl font-black text-xs uppercase tracking-wider shadow-lg transition flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                  className="w-full sm:w-auto min-h-[54px] px-8 sm:px-10 py-3.5 sm:py-4 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-black rounded-xl font-black text-sm sm:text-base uppercase tracking-wider shadow-lg hover:shadow-xl transition-all duration-150 flex items-center justify-center gap-3 cursor-pointer"
                 >
-                  <Download className="w-4 h-4 text-emerald-600" />
-                  <span>Generar Cotización para el Cliente & Descargar PDF</span>
+                  <FileCheck2 className="w-5 h-5 text-black shrink-0" />
+                  <span>Generar cotización</span>
                 </button>
               </div>
             </div>
