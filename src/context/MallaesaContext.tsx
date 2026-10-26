@@ -23,10 +23,16 @@ import {
   INITIAL_INVOICES,
   INITIAL_CREWS
 } from '../data/initialData';
+import { PreloadedQuoteDraft } from '../utils/assistantQuoteParser';
 
 interface MallaesaContextType {
   activeRole: RoleType | null;
   setActiveRole: (role: RoleType | null) => void;
+  currentModule: string;
+  setCurrentModule: (module: string) => void;
+  preloadedQuoteDraft: PreloadedQuoteDraft | null;
+  loadQuoteDraftIntoCalculator: (draft: PreloadedQuoteDraft) => void;
+  clearPreloadedQuoteDraft: () => void;
   requests: QuoteRequest[];
   formalQuotes: FormalQuote[];
   projects: Project[];
@@ -123,6 +129,9 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [activeRole, setActiveRoleState] = useState<RoleType | null>(() => {
     return (localStorage.getItem(STORAGE_KEYS.ACTIVE_ROLE) as RoleType) || null;
   });
+
+  const [currentModule, setCurrentModule] = useState<string>('inicio');
+  const [preloadedQuoteDraft, setPreloadedQuoteDraft] = useState<PreloadedQuoteDraft | null>(null);
 
   const [noSampleDataMode, setNoSampleDataModeState] = useState<boolean>(() => {
     return localStorage.getItem(STORAGE_KEYS.NO_SAMPLE) === 'true';
@@ -858,11 +867,26 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   };
 
+  const loadQuoteDraftIntoCalculator = (draft: PreloadedQuoteDraft) => {
+    setPreloadedQuoteDraft(draft);
+    setActiveRole('cotizador');
+    setCurrentModule('cotizador');
+  };
+
+  const clearPreloadedQuoteDraft = () => {
+    setPreloadedQuoteDraft(null);
+  };
+
   return (
     <MallaesaContext.Provider
       value={{
         activeRole,
         setActiveRole,
+        currentModule,
+        setCurrentModule,
+        preloadedQuoteDraft,
+        loadQuoteDraftIntoCalculator,
+        clearPreloadedQuoteDraft,
         requests,
         formalQuotes,
         projects,

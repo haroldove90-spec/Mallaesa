@@ -13,15 +13,13 @@ import { AdminPortal } from './views/admin/AdminPortal';
 import { OfficialQuoteCalculatorView } from './components/OfficialQuoteCalculatorView';
 import { OfficialCatalogView } from './components/OfficialCatalogView';
 import { QuoteHistoryView } from './components/QuoteHistoryView';
+import { MallaesaChatbotWidget } from './components/MallaesaChatbotWidget';
 
 function DashboardContent() {
-  const { activeRole } = useMallaesa();
+  const { activeRole, currentModule, setCurrentModule } = useMallaesa();
   const [showSplash, setShowSplash] = useState(true);
 
-  // Current active module inside the selected role
-  const [currentModule, setCurrentModule] = useState<string>('inicio');
-
-  // When role changes, set default module
+  // When role changes, set default module if not already set
   useEffect(() => {
     if (activeRole) {
       const defaultModules: Record<string, string> = {
@@ -33,7 +31,9 @@ function DashboardContent() {
         operaciones: 'ordenes',
         administracion: 'cuentas'
       };
-      setCurrentModule(defaultModules[activeRole] || 'inicio');
+      if (!currentModule || currentModule === 'inicio') {
+        setCurrentModule(defaultModules[activeRole] || 'inicio');
+      }
     }
   }, [activeRole]);
 
@@ -122,6 +122,9 @@ function DashboardContent() {
           </div>
         </div>
       )}
+
+      {/* Botón Flotante (FAB) y Ventana de Asistente Cotizador Mallaesa */}
+      <MallaesaChatbotWidget />
     </>
   );
 }

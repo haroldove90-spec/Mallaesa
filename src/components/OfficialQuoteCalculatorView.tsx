@@ -56,10 +56,28 @@ interface OfficialQuoteCalculatorViewProps {
 }
 
 export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewProps> = ({ onGoToHistory }) => {
-  const { saveIntelligentQuote } = useMallaesa();
+  const { saveIntelligentQuote, preloadedQuoteDraft, clearPreloadedQuoteDraft } = useMallaesa();
   const [selectedCategory, setSelectedCategory] = useState<OfficialCategory | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [loadedFromAssistantNotification, setLoadedFromAssistantNotification] = useState<string | null>(null);
+
+  // Sincronización automática con cotización precargada del Asistente Técnico Mallaesa
+  useEffect(() => {
+    if (preloadedQuoteDraft) {
+      setClientData(preloadedQuoteDraft.clientData);
+      setCart(preloadedQuoteDraft.cart);
+      setClientConcepts(preloadedQuoteDraft.clientConcepts);
+      setLoadedFromAssistantNotification(
+        `¡Cotización técnica cargada con éxito desde el Asistente Mallaesa! Se cargaron ${preloadedQuoteDraft.cart.length} partidas de materiales para ${preloadedQuoteDraft.summary.metrosLineales} ML de ${preloadedQuoteDraft.summary.productoLabel}. El precio de venta sugerido (+20% ganancia) se vinculó al concepto final.`
+      );
+      clearPreloadedQuoteDraft();
+
+      setTimeout(() => {
+        window.scrollTo({ top: 380, behavior: 'smooth' });
+      }, 150);
+    }
+  }, [preloadedQuoteDraft, clearPreloadedQuoteDraft]);
 
   // Margen de ganancia para el administrador (Default: 20% como solicitó el usuario)
   const [profitMarginPercent, setProfitMarginPercent] = useState<number>(20);
@@ -413,6 +431,33 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
           </div>
         </div>
       </div>
+
+      {/* Alerta de Carga desde Asistente Técnico Mallaesa */}
+      {loadedFromAssistantNotification && (
+        <div className="bg-emerald-50 border-2 border-emerald-500/30 rounded-2xl p-5 shadow-sm flex items-start justify-between gap-4 animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+              <Sparkles className="w-5 h-5 text-amber-300" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-black text-emerald-900 flex items-center gap-2">
+                <span>Datos Cargados desde el Asistente Técnico Mallaesa</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-200 text-emerald-900 rounded-full">Automático</span>
+              </h3>
+              <p className="text-xs sm:text-sm text-emerald-800 leading-relaxed">
+                {loadedFromAssistantNotification}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setLoadedFromAssistantNotification(null)}
+            className="text-emerald-700 hover:text-emerald-900 text-xs font-bold px-2.5 py-1 bg-white border border-emerald-300 rounded-lg hover:bg-emerald-100 transition cursor-pointer shrink-0"
+          >
+            Entendido
+          </button>
+        </div>
+      )}
 
       {/* VISTA DE RESULTADO FORMAL SI YA SE GENERÓ LA COTIZACIÓN */}
       {generatedQuoteResult && (
