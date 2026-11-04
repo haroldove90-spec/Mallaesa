@@ -11,7 +11,12 @@ import {
   CrewMember,
   ServiceType,
   TerrainType,
-  QuoteItem
+  QuoteItem,
+  PurchaseOrder,
+  AccountsPayableItem,
+  SimpleReceipt,
+  WarehouseMovement,
+  CustomerServiceTicket
 } from '../types';
 import {
   INITIAL_REQUESTS,
@@ -21,7 +26,12 @@ import {
   INITIAL_INVENTORY,
   INITIAL_APPROVALS,
   INITIAL_INVOICES,
-  INITIAL_CREWS
+  INITIAL_CREWS,
+  INITIAL_PURCHASE_ORDERS,
+  INITIAL_ACCOUNTS_PAYABLE,
+  INITIAL_SIMPLE_RECEIPTS,
+  INITIAL_WAREHOUSE_MOVEMENTS,
+  INITIAL_CUSTOMER_SERVICE_TICKETS
 } from '../data/initialData';
 import { PreloadedQuoteDraft } from '../utils/assistantQuoteParser';
 
@@ -41,6 +51,11 @@ interface MallaesaContextType {
   approvals: Approval[];
   invoices: Invoice[];
   crews: CrewMember[];
+  purchaseOrders: PurchaseOrder[];
+  accountsPayable: AccountsPayableItem[];
+  simpleReceipts: SimpleReceipt[];
+  warehouseMovements: WarehouseMovement[];
+  customerServiceTickets: CustomerServiceTicket[];
   noSampleDataMode: boolean;
   clearAllSampleData: () => void;
   setNoSampleDataMode: (enabled: boolean) => void;
@@ -109,6 +124,25 @@ interface MallaesaContextType {
 
   // Inventory actions
   adjustInventoryStock: (itemId: string, newStock: number) => void;
+
+  // Órdenes de Compra
+  createPurchaseOrder: (po: Omit<PurchaseOrder, 'id' | 'folio'>) => PurchaseOrder;
+  updatePurchaseOrderStatus: (poId: string, status: PurchaseOrder['status']) => void;
+  receivePurchaseOrderIntoWarehouse: (poId: string) => void;
+
+  // Cuentas por Pagar
+  createAccountsPayable: (item: Omit<AccountsPayableItem, 'id' | 'folio' | 'balance' | 'status' | 'amountPaid'>) => AccountsPayableItem;
+  registerAccountsPayablePayment: (cxpId: string, amount: number, method: string) => void;
+
+  // Recibos No Fiscales
+  createSimpleReceipt: (receipt: Omit<SimpleReceipt, 'id' | 'folio'>) => SimpleReceipt;
+
+  // Almacén: Solicitudes de Ingreso y Egreso
+  registerWarehouseMovement: (mov: Omit<WarehouseMovement, 'id' | 'folio'>) => WarehouseMovement;
+
+  // Atención a Clientes
+  createCustomerServiceTicket: (ticket: Omit<CustomerServiceTicket, 'id' | 'folio' | 'createdAt'>) => CustomerServiceTicket;
+  updateCustomerServiceTicketStatus: (ticketId: string, status: CustomerServiceTicket['status'], resolutionNotes?: string) => void;
 }
 
 const MallaesaContext = createContext<MallaesaContextType | undefined>(undefined);
@@ -122,7 +156,12 @@ const STORAGE_KEYS = {
   WORK_ORDERS: 'mallaesa_work_orders',
   INVENTORY: 'mallaesa_inventory',
   APPROVALS: 'mallaesa_approvals',
-  INVOICES: 'mallaesa_invoices'
+  INVOICES: 'mallaesa_invoices',
+  PURCHASE_ORDERS: 'mallaesa_purchase_orders',
+  ACCOUNTS_PAYABLE: 'mallaesa_accounts_payable',
+  SIMPLE_RECEIPTS: 'mallaesa_simple_receipts',
+  WAREHOUSE_MOVEMENTS: 'mallaesa_warehouse_movements',
+  CUSTOMER_SERVICE_TICKETS: 'mallaesa_cs_tickets'
 };
 
 export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -196,6 +235,51 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return saved ? JSON.parse(saved) : INITIAL_INVOICES;
   });
 
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(() => {
+    if (localStorage.getItem(STORAGE_KEYS.NO_SAMPLE) === 'true') {
+      const saved = localStorage.getItem(STORAGE_KEYS.PURCHASE_ORDERS);
+      return saved ? JSON.parse(saved) : [];
+    }
+    const saved = localStorage.getItem(STORAGE_KEYS.PURCHASE_ORDERS);
+    return saved ? JSON.parse(saved) : INITIAL_PURCHASE_ORDERS;
+  });
+
+  const [accountsPayable, setAccountsPayable] = useState<AccountsPayableItem[]>(() => {
+    if (localStorage.getItem(STORAGE_KEYS.NO_SAMPLE) === 'true') {
+      const saved = localStorage.getItem(STORAGE_KEYS.ACCOUNTS_PAYABLE);
+      return saved ? JSON.parse(saved) : [];
+    }
+    const saved = localStorage.getItem(STORAGE_KEYS.ACCOUNTS_PAYABLE);
+    return saved ? JSON.parse(saved) : INITIAL_ACCOUNTS_PAYABLE;
+  });
+
+  const [simpleReceipts, setSimpleReceipts] = useState<SimpleReceipt[]>(() => {
+    if (localStorage.getItem(STORAGE_KEYS.NO_SAMPLE) === 'true') {
+      const saved = localStorage.getItem(STORAGE_KEYS.SIMPLE_RECEIPTS);
+      return saved ? JSON.parse(saved) : [];
+    }
+    const saved = localStorage.getItem(STORAGE_KEYS.SIMPLE_RECEIPTS);
+    return saved ? JSON.parse(saved) : INITIAL_SIMPLE_RECEIPTS;
+  });
+
+  const [warehouseMovements, setWarehouseMovements] = useState<WarehouseMovement[]>(() => {
+    if (localStorage.getItem(STORAGE_KEYS.NO_SAMPLE) === 'true') {
+      const saved = localStorage.getItem(STORAGE_KEYS.WAREHOUSE_MOVEMENTS);
+      return saved ? JSON.parse(saved) : [];
+    }
+    const saved = localStorage.getItem(STORAGE_KEYS.WAREHOUSE_MOVEMENTS);
+    return saved ? JSON.parse(saved) : INITIAL_WAREHOUSE_MOVEMENTS;
+  });
+
+  const [customerServiceTickets, setCustomerServiceTickets] = useState<CustomerServiceTicket[]>(() => {
+    if (localStorage.getItem(STORAGE_KEYS.NO_SAMPLE) === 'true') {
+      const saved = localStorage.getItem(STORAGE_KEYS.CUSTOMER_SERVICE_TICKETS);
+      return saved ? JSON.parse(saved) : [];
+    }
+    const saved = localStorage.getItem(STORAGE_KEYS.CUSTOMER_SERVICE_TICKETS);
+    return saved ? JSON.parse(saved) : INITIAL_CUSTOMER_SERVICE_TICKETS;
+  });
+
   const crews = INITIAL_CREWS;
 
   // Synchronize to localStorage
@@ -227,6 +311,26 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(invoices));
   }, [invoices]);
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.PURCHASE_ORDERS, JSON.stringify(purchaseOrders));
+  }, [purchaseOrders]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.ACCOUNTS_PAYABLE, JSON.stringify(accountsPayable));
+  }, [accountsPayable]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.SIMPLE_RECEIPTS, JSON.stringify(simpleReceipts));
+  }, [simpleReceipts]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.WAREHOUSE_MOVEMENTS, JSON.stringify(warehouseMovements));
+  }, [warehouseMovements]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.CUSTOMER_SERVICE_TICKETS, JSON.stringify(customerServiceTickets));
+  }, [customerServiceTickets]);
+
   const setActiveRole = (role: RoleType | null) => {
     setActiveRoleState(role);
     if (role) {
@@ -251,12 +355,22 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setWorkOrders([]);
     setApprovals([]);
     setInvoices([]);
+    setPurchaseOrders([]);
+    setAccountsPayable([]);
+    setSimpleReceipts([]);
+    setWarehouseMovements([]);
+    setCustomerServiceTickets([]);
     localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.QUOTES, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.WORK_ORDERS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.APPROVALS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.PURCHASE_ORDERS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.ACCOUNTS_PAYABLE, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.SIMPLE_RECEIPTS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.WAREHOUSE_MOVEMENTS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.CUSTOMER_SERVICE_TICKETS, JSON.stringify([]));
   };
 
   const restoreDemoData = () => {
@@ -269,6 +383,11 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setInventory(INITIAL_INVENTORY);
     setApprovals(INITIAL_APPROVALS);
     setInvoices(INITIAL_INVOICES);
+    setPurchaseOrders(INITIAL_PURCHASE_ORDERS);
+    setAccountsPayable(INITIAL_ACCOUNTS_PAYABLE);
+    setSimpleReceipts(INITIAL_SIMPLE_RECEIPTS);
+    setWarehouseMovements(INITIAL_WAREHOUSE_MOVEMENTS);
+    setCustomerServiceTickets(INITIAL_CUSTOMER_SERVICE_TICKETS);
   };
 
   // Phase 1: Client submits questionnaire
@@ -867,6 +986,229 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   };
 
+  // Órdenes de Compra (OC)
+  const createPurchaseOrder = (poData: Omit<PurchaseOrder, 'id' | 'folio'>): PurchaseOrder => {
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    const folio = `OC-2026-${randomNum}`;
+    const newPO: PurchaseOrder = {
+      id: `po-${Date.now()}`,
+      folio,
+      ...poData
+    };
+
+    setPurchaseOrders(prev => [newPO, ...prev]);
+
+    // Crear automáticamente cuenta por pagar asociada si la OC queda autorizada o en camino
+    if (poData.status === 'autorizada' || poData.status === 'en_camino') {
+      const newCXP: AccountsPayableItem = {
+        id: `cxp-${Date.now()}`,
+        folio: `CXP-${randomNum}`,
+        provider: poData.provider,
+        category: 'materia_prima',
+        invoiceOrRef: folio,
+        issueDate: poData.date,
+        dueDate: poData.deliveryDateEstimated || poData.date,
+        amount: poData.total,
+        amountPaid: 0,
+        balance: poData.total,
+        status: 'pendiente',
+        notes: `Generado automáticamente por ${folio}`
+      };
+      setAccountsPayable(prev => [newCXP, ...prev]);
+    }
+
+    return newPO;
+  };
+
+  const updatePurchaseOrderStatus = (poId: string, status: PurchaseOrder['status']) => {
+    setPurchaseOrders(prev =>
+      prev.map(p => (p.id === poId ? { ...p, status } : p))
+    );
+  };
+
+  const receivePurchaseOrderIntoWarehouse = (poId: string) => {
+    const po = purchaseOrders.find(p => p.id === poId);
+    if (!po) return;
+
+    const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+
+    // 1. Marcar OC como recibida
+    setPurchaseOrders(prev =>
+      prev.map(p => (p.id === poId ? { ...p, status: 'recibida', receivedAt: now } : p))
+    );
+
+    // 2. Incrementar stock en inventario
+    po.items.forEach(item => {
+      if (item.inventoryItemId) {
+        setInventory(prev =>
+          prev.map(inv =>
+            inv.id === item.inventoryItemId
+              ? { ...inv, stock: inv.stock + item.quantity }
+              : inv
+          )
+        );
+      }
+    });
+
+    // 3. Registrar vale de movimiento de ingreso en almacén
+    const newMov: WarehouseMovement = {
+      id: `wm-${Date.now()}`,
+      folio: `ENT-COMP-2026-${Math.floor(100 + Math.random() * 900)}`,
+      type: 'ingreso_compra',
+      referenceFolio: po.folio,
+      date: now,
+      requestedBy: 'Encargado de Almacén',
+      destinationOrOrigin: po.provider,
+      items: po.items.map(i => ({
+        materialName: i.description,
+        quantity: i.quantity,
+        unit: i.unit,
+        inventoryItemId: i.inventoryItemId
+      })),
+      notes: `Ingreso automático por recepción total de ${po.folio}`,
+      status: 'completado'
+    };
+    setWarehouseMovements(prev => [newMov, ...prev]);
+  };
+
+  // Cuentas por Pagar (CxP)
+  const createAccountsPayable = (item: Omit<AccountsPayableItem, 'id' | 'folio' | 'balance' | 'status' | 'amountPaid'>): AccountsPayableItem => {
+    const newCXP: AccountsPayableItem = {
+      id: `cxp-${Date.now()}`,
+      folio: `CXP-${Math.floor(1000 + Math.random() * 9000)}`,
+      ...item,
+      amountPaid: 0,
+      balance: item.amount,
+      status: 'pendiente'
+    };
+    setAccountsPayable(prev => [newCXP, ...prev]);
+    return newCXP;
+  };
+
+  const registerAccountsPayablePayment = (cxpId: string, amount: number, method: string) => {
+    const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    setAccountsPayable(prev =>
+      prev.map(cxp => {
+        if (cxp.id !== cxpId) return cxp;
+        const newPaid = Number((cxp.amountPaid + amount).toFixed(2));
+        const newBalance = Math.max(0, Number((cxp.amount - newPaid).toFixed(2)));
+        const newStatus: AccountsPayableItem['status'] = newBalance <= 0 ? 'pagado' : 'parcial';
+        return {
+          ...cxp,
+          amountPaid: newPaid,
+          balance: newBalance,
+          status: newStatus,
+          paymentMethod: method,
+          paidAt: now
+        };
+      })
+    );
+  };
+
+  // Recibos Simples No Fiscales
+  const createSimpleReceipt = (data: Omit<SimpleReceipt, 'id' | 'folio'>): SimpleReceipt => {
+    const folio = `REC-MAL-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newReceipt: SimpleReceipt = {
+      id: `rec-${Date.now()}`,
+      folio,
+      ...data
+    };
+    setSimpleReceipts(prev => [newReceipt, ...prev]);
+
+    // Si está vinculado a un proyecto, sincronizar saldo
+    if (data.projectId) {
+      setProjects(prev =>
+        prev.map(p => {
+          if (p.id !== data.projectId) return p;
+          if (data.paymentType === 'anticipo') {
+            return {
+              ...p,
+              advancePaid: true,
+              advanceDate: data.date,
+              advanceReceipt: folio,
+              status: 'anticipo_confirmado'
+            };
+          } else if (data.paymentType === 'liquidacion_total') {
+            return {
+              ...p,
+              balancePaid: true,
+              balanceDate: data.date,
+              status: 'finalizado'
+            };
+          }
+          return p;
+        })
+      );
+    }
+
+    return newReceipt;
+  };
+
+  // Almacén: Movimientos
+  const registerWarehouseMovement = (data: Omit<WarehouseMovement, 'id' | 'folio'>): WarehouseMovement => {
+    const folio = data.type === 'egreso_obra'
+      ? `VALE-SAL-${Math.floor(1000 + Math.random() * 9000)}`
+      : data.type === 'ingreso_compra'
+      ? `ENT-COMP-${Math.floor(1000 + Math.random() * 9000)}`
+      : `DEV-OBRA-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const newMov: WarehouseMovement = {
+      id: `wm-${Date.now()}`,
+      folio,
+      ...data
+    };
+
+    // Ajustar inventario según el tipo
+    data.items.forEach(item => {
+      if (item.inventoryItemId) {
+        setInventory(prev =>
+          prev.map(inv => {
+            if (inv.id !== item.inventoryItemId) return inv;
+            if (data.type === 'egreso_obra') {
+              return { ...inv, stock: Math.max(0, inv.stock - item.quantity) };
+            } else if (data.type === 'ingreso_compra' || data.type === 'devolucion_sobrante') {
+              return { ...inv, stock: inv.stock + item.quantity };
+            }
+            return inv;
+          })
+        );
+      }
+    });
+
+    setWarehouseMovements(prev => [newMov, ...prev]);
+    return newMov;
+  };
+
+  // Atención a Clientes
+  const createCustomerServiceTicket = (data: Omit<CustomerServiceTicket, 'id' | 'folio' | 'createdAt'>): CustomerServiceTicket => {
+    const folio = `ATC-2026-${Math.floor(100 + Math.random() * 900)}`;
+    const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    const newTicket: CustomerServiceTicket = {
+      id: `tkt-${Date.now()}`,
+      folio,
+      createdAt: now,
+      ...data
+    };
+    setCustomerServiceTickets(prev => [newTicket, ...prev]);
+    return newTicket;
+  };
+
+  const updateCustomerServiceTicketStatus = (ticketId: string, status: CustomerServiceTicket['status'], resolutionNotes?: string) => {
+    const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    setCustomerServiceTickets(prev =>
+      prev.map(t =>
+        t.id === ticketId
+          ? {
+              ...t,
+              status,
+              resolutionNotes: resolutionNotes || t.resolutionNotes,
+              resolvedAt: status === 'resuelto' ? now : t.resolvedAt
+            }
+          : t
+      )
+    );
+  };
+
   const loadQuoteDraftIntoCalculator = (draft: PreloadedQuoteDraft) => {
     setPreloadedQuoteDraft(draft);
     setActiveRole('cotizador');
@@ -895,6 +1237,11 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         approvals,
         invoices,
         crews,
+        purchaseOrders,
+        accountsPayable,
+        simpleReceipts,
+        warehouseMovements,
+        customerServiceTickets,
         noSampleDataMode,
         clearAllSampleData,
         setNoSampleDataMode,
@@ -912,7 +1259,16 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         submitFieldSignatureAndPhotos,
         registerFinalPayment,
         resolveApproval,
-        adjustInventoryStock
+        adjustInventoryStock,
+        createPurchaseOrder,
+        updatePurchaseOrderStatus,
+        receivePurchaseOrderIntoWarehouse,
+        createAccountsPayable,
+        registerAccountsPayablePayment,
+        createSimpleReceipt,
+        registerWarehouseMovement,
+        createCustomerServiceTicket,
+        updateCustomerServiceTicketStatus
       }}
     >
       {children}

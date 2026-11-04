@@ -203,3 +203,107 @@ export interface CrewMember {
   vehicle: string;
   status: 'disponible' | 'en_obra' | 'mantenimiento';
 }
+
+export interface PurchaseOrderItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  unitCost: number;
+  total: number;
+  inventoryItemId?: string;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  folio: string;
+  provider: string;
+  rfc: string;
+  contactName?: string;
+  contactPhone?: string;
+  date: string;
+  deliveryDateEstimated?: string;
+  items: PurchaseOrderItem[];
+  subtotal: number;
+  iva: number;
+  total: number;
+  status: 'borrador' | 'autorizada' | 'en_camino' | 'recibida' | 'cancelada';
+  approvedBy?: string;
+  notes?: string;
+  receivedAt?: string;
+}
+
+export interface AccountsPayableItem {
+  id: string;
+  folio: string;
+  provider: string;
+  category: 'materia_prima' | 'servicios' | 'fletes' | 'herramientas' | 'novedades';
+  invoiceOrRef: string;
+  issueDate: string;
+  dueDate: string;
+  amount: number;
+  amountPaid: number;
+  balance: number;
+  status: 'pendiente' | 'parcial' | 'pagado';
+  paymentMethod?: string;
+  paidAt?: string;
+  notes?: string;
+}
+
+export interface SimpleReceipt {
+  id: string;
+  folio: string;
+  projectId?: string;
+  clientName: string;
+  clientPhone: string;
+  clientAddress?: string;
+  concept: string;
+  totalProjectAmount: number;
+  amountPaid: number;
+  remainingBalance: number;
+  paymentType: 'anticipo' | 'abono_parcial' | 'liquidacion_total';
+  paymentMethod: 'Efectivo' | 'Transferencia SPEI' | 'Tarjeta de Débito/Crédito' | 'Cheque';
+  reference: string;
+  date: string;
+  issuedBy: string;
+  notes?: string;
+}
+
+export interface WarehouseMovementItem {
+  materialName: string;
+  quantity: number;
+  unit: string;
+  inventoryItemId?: string;
+}
+
+export interface WarehouseMovement {
+  id: string;
+  folio: string;
+  type: 'egreso_obra' | 'ingreso_compra' | 'devolucion_sobrante' | 'ajuste_inventario';
+  referenceFolio: string; // e.g. OT-MAL-2026-901 or OC-2026-102
+  date: string;
+  requestedBy: string;
+  destinationOrOrigin: string;
+  items: WarehouseMovementItem[];
+  notes?: string;
+  status: 'completado' | 'pendiente';
+}
+
+export interface CustomerServiceTicket {
+  id: string;
+  folio: string;
+  clientName: string;
+  clientPhone: string;
+  clientEmail?: string;
+  projectFolio?: string;
+  type: 'solicitud_presupuesto' | 'seguimiento_obra' | 'garantia_mantenimiento' | 'aclaracion';
+  priority: 'alta' | 'media' | 'baja';
+  status: 'abierto' | 'en_proceso' | 'resuelto';
+  subject: string;
+  description: string;
+  createdAt: string;
+  assignedTo: string;
+  resolutionNotes?: string;
+  resolvedAt?: string;
+}
+

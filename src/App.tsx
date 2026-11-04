@@ -14,6 +14,7 @@ import { OfficialQuoteCalculatorView } from './components/OfficialQuoteCalculato
 import { OfficialCatalogView } from './components/OfficialCatalogView';
 import { QuoteHistoryView } from './components/QuoteHistoryView';
 import { MallaesaChatbotWidget } from './components/MallaesaChatbotWidget';
+import { NotificationToast } from './components/NotificationToast';
 
 function DashboardContent() {
   const { activeRole, currentModule, setCurrentModule } = useMallaesa();
@@ -125,6 +126,9 @@ function DashboardContent() {
 
       {/* Botón Flotante (FAB) y Ventana de Asistente Cotizador Mallaesa */}
       <MallaesaChatbotWidget />
+
+      {/* Sistema de Notificaciones Flotantes Toast (Seguro para iframes) */}
+      <NotificationToast />
     </>
   );
 }

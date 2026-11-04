@@ -19,6 +19,8 @@ import {
   Eye,
   Check
 } from 'lucide-react';
+import { AccountsPayableView } from '../../components/AccountsPayableView';
+import { SimpleReceiptsView } from '../../components/SimpleReceiptsView';
 
 export const AdminPortal: React.FC<{
   activeModule: string;
@@ -420,6 +422,20 @@ export const AdminPortal: React.FC<{
             ))}
           </div>
         </div>
+      )}
+
+      {/* ========================================================
+          MÓDULO 4: CUENTAS POR PAGAR (CxP)
+         ======================================================== */}
+      {activeModule === 'cuentas_pagar' && (
+        <AccountsPayableView />
+      )}
+
+      {/* ========================================================
+          MÓDULO 5: RECIBOS SIMPLES (SIN FACTURA)
+         ======================================================== */}
+      {activeModule === 'recibos' && (
+        <SimpleReceiptsView />
       )}
     </div>
   );

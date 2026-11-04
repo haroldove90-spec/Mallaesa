@@ -22,6 +22,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   </head>
   <body class="bg-stone-50 text-neutral-900 font-sans antialiased selection:bg-neutral-800 selection:text-white">
+    <script>
+      // En entorno de iframe de AI Studio, HMR está inactivo por diseño; ignorar errores benignos de WebSocket
+      window.addEventListener('error', function(event) {
+        if (event.message && (event.message.includes('WebSocket') || event.message.includes('@vite/client'))) {
+          event.stopImmediatePropagation();
+          event.preventDefault();
+        }
+      });
+      window.addEventListener('unhandledrejection', function(event) {
+        if (event.reason && String(event.reason).includes('WebSocket')) {
+          event.stopImmediatePropagation();
+          event.preventDefault();
+        }
+      });
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

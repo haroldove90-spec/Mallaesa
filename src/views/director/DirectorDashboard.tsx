@@ -16,6 +16,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { QuoteHistoryView } from '../../components/QuoteHistoryView';
+import { PurchaseOrdersView } from '../../components/PurchaseOrdersView';
 
 export const DirectorDashboard: React.FC<{
   activeModule: string;
@@ -507,6 +508,11 @@ export const DirectorDashboard: React.FC<{
       {/* MÓDULO: HISTORIAL DE COTIZACIONES OFICIALES */}
       {activeModule === 'historial' && (
         <QuoteHistoryView />
+      )}
+
+      {/* MÓDULO: ÓRDENES DE COMPRA (OC) */}
+      {activeModule === 'ordenes_compra' && (
+        <PurchaseOrdersView />
       )}
     </div>
   );

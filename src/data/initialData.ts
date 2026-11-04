@@ -6,7 +6,12 @@ import {
   InventoryItem,
   Approval,
   Invoice,
-  CrewMember
+  CrewMember,
+  PurchaseOrder,
+  AccountsPayableItem,
+  SimpleReceipt,
+  WarehouseMovement,
+  CustomerServiceTicket
 } from '../types';
 
 export const INITIAL_CREWS: CrewMember[] = [
@@ -689,3 +694,276 @@ export const INITIAL_INVOICES: Invoice[] = [
     status: 'timbrada'
   }
 ];
+
+export const INITIAL_PURCHASE_ORDERS: PurchaseOrder[] = [
+  {
+    id: 'po-1',
+    folio: 'OC-2026-1042',
+    provider: 'Ternium México / Deacero S.A. de C.V.',
+    rfc: 'DEA710515NL2',
+    contactName: 'Ing. Alejandro Villarreal',
+    contactPhone: '81-8300-4400',
+    date: '2026-10-18',
+    deliveryDateEstimated: '2026-10-22',
+    items: [
+      {
+        id: 'poi-1',
+        description: 'Rollo Malla Ciclónica Calibre 10.5 (2.00m x 20m)',
+        quantity: 50,
+        unit: 'Rollo',
+        unitCost: 1450,
+        total: 72500,
+        inventoryItemId: 'inv-1'
+      },
+      {
+        id: 'poi-2',
+        description: 'Poste de Línea Galvanizado 48mm x 2.50m',
+        quantity: 150,
+        unit: 'Pieza',
+        unitCost: 210,
+        total: 31500,
+        inventoryItemId: 'inv-3'
+      },
+      {
+        id: 'poi-3',
+        description: 'Tubo Superior / Marco 38mm x 6.00m',
+        quantity: 100,
+        unit: 'Tramo',
+        unitCost: 260,
+        total: 26000,
+        inventoryItemId: 'inv-5'
+      }
+    ],
+    subtotal: 130000,
+    iva: 20800,
+    total: 150800,
+    status: 'autorizada',
+    approvedBy: 'Eduardo Siller (Director General)',
+    notes: 'Pedido de reposición mensual para contratos industriales en Parque Apodaca.'
+  },
+  {
+    id: 'po-2',
+    folio: 'OC-2026-1043',
+    provider: 'Concertinas y Alambres de Monterrey S.A.',
+    rfc: 'CAM890312MN4',
+    contactName: 'Lic. Laura Treviño',
+    contactPhone: '81-8122-9011',
+    date: '2026-10-21',
+    deliveryDateEstimated: '2026-10-25',
+    items: [
+      {
+        id: 'poi-4',
+        description: 'Concertina Helicoidal Arpón Galvanizada 45cm (8m)',
+        quantity: 40,
+        unit: 'Rollo 8m',
+        unitCost: 315,
+        total: 12600,
+        inventoryItemId: 'inv-6'
+      },
+      {
+        id: 'poi-5',
+        description: 'Alambre de Púas Galvanizado Reforzado 300 ML Cal. 12.5',
+        quantity: 25,
+        unit: 'Rollo',
+        unitCost: 1142,
+        total: 28550
+      }
+    ],
+    subtotal: 41150,
+    iva: 6584,
+    total: 47734,
+    status: 'en_camino',
+    approvedBy: 'Eduardo Siller (Director General)',
+    notes: 'Urgente para instalación de seguridad penitenciaria y bodegas.'
+  }
+];
+
+export const INITIAL_ACCOUNTS_PAYABLE: AccountsPayableItem[] = [
+  {
+    id: 'cxp-1',
+    folio: 'CXP-5401',
+    provider: 'Ternium / Deacero S.A. de C.V.',
+    category: 'materia_prima',
+    invoiceOrRef: 'FAC-DEAC-99420',
+    issueDate: '2026-10-15',
+    dueDate: '2026-10-30',
+    amount: 150800,
+    amountPaid: 75400,
+    balance: 75400,
+    status: 'parcial',
+    paymentMethod: 'SPEI Banorte',
+    notes: 'Anticipo 50% cubierto. Saldo contra entrega en patio de bodega.'
+  },
+  {
+    id: 'cxp-2',
+    folio: 'CXP-5402',
+    provider: 'Cementos Tolteca Cemex Distribución',
+    category: 'materia_prima',
+    invoiceOrRef: 'CEM-77218',
+    issueDate: '2026-10-12',
+    dueDate: '2026-10-27',
+    amount: 36750,
+    amountPaid: 36750,
+    balance: 0,
+    status: 'pagado',
+    paymentMethod: 'Transferencia BBVA',
+    paidAt: '2026-10-20',
+    notes: 'Suministro de 150 sacos de cemento gris.'
+  },
+  {
+    id: 'cxp-3',
+    folio: 'CXP-5403',
+    provider: 'Transportes y Fletes Industriales Regios',
+    category: 'fletes',
+    invoiceOrRef: 'FLET-1092',
+    issueDate: '2026-10-22',
+    dueDate: '2026-11-05',
+    amount: 14200,
+    amountPaid: 0,
+    balance: 14200,
+    status: 'pendiente',
+    paymentMethod: 'Pendiente',
+    notes: 'Flete foráneo tramo García - Saltillo para entrega de malla.'
+  }
+];
+
+export const INITIAL_SIMPLE_RECEIPTS: SimpleReceipt[] = [
+  {
+    id: 'rec-1',
+    folio: 'REC-MAL-2026-8910',
+    projectId: 'proj-0842',
+    clientName: 'Ing. Carlos Elizondo Cantú',
+    clientPhone: '81-1992-3301',
+    clientAddress: 'Quinta Las Palmas, Allende, N.L.',
+    concept: 'Anticipo del 50% para Suministro e Instalación de 120 ML de Malla Ciclónica',
+    totalProjectAmount: 48500,
+    amountPaid: 24250,
+    remainingBalance: 24250,
+    paymentType: 'anticipo',
+    paymentMethod: 'Transferencia SPEI',
+    reference: 'SPEI-BBVA-782190',
+    date: '2026-10-14',
+    issuedBy: 'Administración MALLAESA (Lic. Patricia Garza)',
+    notes: 'Cliente particular. No requiere factura fiscal CFDI. Saldo al terminar obra.'
+  },
+  {
+    id: 'rec-2',
+    folio: 'REC-MAL-2026-8911',
+    projectId: 'proj-0842',
+    clientName: 'Ing. Carlos Elizondo Cantú',
+    clientPhone: '81-1992-3301',
+    clientAddress: 'Quinta Las Palmas, Allende, N.L.',
+    concept: 'Finiquito y Liquidación Total por entrega de cerco perimetral con conformidad',
+    totalProjectAmount: 48500,
+    amountPaid: 24250,
+    remainingBalance: 0,
+    paymentType: 'liquidacion_total',
+    paymentMethod: 'Efectivo',
+    reference: 'PAGO-EFEC-SUC-01',
+    date: '2026-10-19',
+    issuedBy: 'Administración MALLAESA (Lic. Patricia Garza)',
+    notes: 'Proyecto 100% liquidado. Se anexa Póliza de Garantía de 3 años firmada.'
+  }
+];
+
+export const INITIAL_WAREHOUSE_MOVEMENTS: WarehouseMovement[] = [
+  {
+    id: 'wm-1',
+    folio: 'VALE-SAL-2026-401',
+    type: 'egreso_obra',
+    referenceFolio: 'OT-MAL-2026-8401',
+    date: '2026-10-10 08:30',
+    requestedBy: 'Roberto Mendoza (Cuadrilla Alfa)',
+    destinationOrOrigin: 'Obra Don Gerardo Garza Sada (San Pedro Garza García)',
+    items: [
+      { materialName: 'Rollo Malla Ciclónica Cal. 10.5 (2.00m)', quantity: 6, unit: 'Rollo', inventoryItemId: 'inv-1' },
+      { materialName: 'Postes de Línea 48mm x 2.50m', quantity: 36, unit: 'Pieza', inventoryItemId: 'inv-3' },
+      { materialName: 'Abrazaderas y Tornillería de Tensión', quantity: 108, unit: 'Pieza', inventoryItemId: 'inv-8' },
+      { materialName: 'Sacos Cemento Gris Tolteca', quantity: 18, unit: 'Saco', inventoryItemId: 'inv-9' }
+    ],
+    notes: 'Salida de almacén autorizada conforme a metraje de 105 ML.',
+    status: 'completado'
+  },
+  {
+    id: 'wm-2',
+    folio: 'ENT-COMP-2026-102',
+    type: 'ingreso_compra',
+    referenceFolio: 'OC-2026-1040',
+    date: '2026-10-14 11:15',
+    requestedBy: 'Encargado de Bodega (Martín Almaguer)',
+    destinationOrOrigin: 'Proveedor Deacero Planta Monterrey',
+    items: [
+      { materialName: 'Poste de Línea Galvanizado 48mm x 2.50m', quantity: 100, unit: 'Pieza', inventoryItemId: 'inv-3' },
+      { materialName: 'Tubo Superior Galvanizado 38mm x 6.00m', quantity: 60, unit: 'Tramo', inventoryItemId: 'inv-5' }
+    ],
+    notes: 'Recepción conforme contra remisión y factura de Deacero.',
+    status: 'completado'
+  },
+  {
+    id: 'wm-3',
+    folio: 'DEV-OBRA-2026-044',
+    type: 'devolucion_sobrante',
+    referenceFolio: 'OT-MAL-2026-8401',
+    date: '2026-10-13 16:45',
+    requestedBy: 'Carlos Téllez (Cuadrilla Alfa)',
+    destinationOrOrigin: 'Retorno de obra concluida San Pedro',
+    items: [
+      { materialName: 'Sacos Cemento Gris Tolteca', quantity: 2, unit: 'Saco', inventoryItemId: 'inv-9' },
+      { materialName: 'Abrazaderas galvanizadas', quantity: 8, unit: 'Pieza', inventoryItemId: 'inv-8' }
+    ],
+    notes: 'Material sobrante limpio reintegrado a stock.',
+    status: 'completado'
+  }
+];
+
+export const INITIAL_CUSTOMER_SERVICE_TICKETS: CustomerServiceTicket[] = [
+  {
+    id: 'tkt-1',
+    folio: 'ATC-2026-041',
+    clientName: 'Parque Industrial Las Américas',
+    clientPhone: '81-8310-7700',
+    clientEmail: 'mantenimiento@americaspark.mx',
+    projectFolio: 'PROJ-IND-771',
+    type: 'garantia_mantenimiento',
+    priority: 'alta',
+    status: 'en_proceso',
+    subject: 'Ajuste de tensión en portón vehicular de acceso principal',
+    description: 'El cliente reporta que un camión pesado rozó levemente el poste de abatimiento del portón y requiere re-calibrar la bisagra y tensión de la malla.',
+    createdAt: '2026-10-21 09:30',
+    assignedTo: 'Cuadrilla Beta (Eduardo & Manuel)',
+    resolutionNotes: 'Cuadrilla programada para visita técnica el jueves a primera hora.'
+  },
+  {
+    id: 'tkt-2',
+    folio: 'ATC-2026-042',
+    clientName: 'Harold Anguiano',
+    clientPhone: '555624222449',
+    clientEmail: 'harold.anguiano@gmail.com',
+    type: 'solicitud_presupuesto',
+    priority: 'media',
+    status: 'en_proceso',
+    subject: 'Asesoría técnica para cerco perimetral en Tlalnepantla, Edo. Méx.',
+    description: 'Interesado en cotización de 100 ML de malla ciclónica galvanizada con 3 líneas de púas y puerta de acceso.',
+    createdAt: '2026-10-26 10:15',
+    assignedTo: 'Asesor Técnico Mallaesa (Ventas)',
+    resolutionNotes: 'Datos capturados y procesados por el Asistente Técnico Cotizador.'
+  },
+  {
+    id: 'tkt-3',
+    folio: 'ATC-2026-039',
+    clientName: 'Dra. Sofía Benavides Morales',
+    clientPhone: '81-1402-9988',
+    clientEmail: 'sofia.benavides@vallealto.mx',
+    projectFolio: 'proj-0841',
+    type: 'seguimiento_obra',
+    priority: 'baja',
+    status: 'resuelto',
+    subject: 'Solicitud de póliza de garantía digital y asesoría de mantenimiento',
+    description: 'Confirmación de entrega de cerco perimetral en Carretera Nacional y recepción de póliza de 3 años.',
+    createdAt: '2026-10-13 14:00',
+    assignedTo: 'Atención a Clientes Mallaesa',
+    resolutionNotes: 'Póliza enviada en PDF por correo y WhatsApp con conformidad firmada.',
+    resolvedAt: '2026-10-13 16:30'
+  }
+];
+

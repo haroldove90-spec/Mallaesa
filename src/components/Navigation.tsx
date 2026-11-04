@@ -24,7 +24,11 @@ import {
   Home,
   PhoneCall,
   Globe,
-  History
+  History,
+  ShoppingCart,
+  CreditCard,
+  ArrowDownUp,
+  Headphones
 } from 'lucide-react';
 
 export interface NavItem {
@@ -50,29 +54,34 @@ export const ROLE_MODULES: Record<RoleType, NavItem[]> = {
   cliente: [
     { id: 'cotizador', label: 'Cotizador', icon: <Calculator className="w-5 h-5" /> },
     { id: 'catalogo', label: 'Catálogo', icon: <Grid className="w-5 h-5" /> },
-    { id: 'estatus', label: 'Estatus de Proyecto', icon: <Search className="w-5 h-5" /> }
+    { id: 'estatus', label: 'Estatus de Proyecto & Garantía', icon: <Search className="w-5 h-5" /> }
   ],
   director: [
-    { id: 'kpis', label: 'Dashboard Ejecutivo', icon: <BarChart3 className="w-5 h-5" /> },
+    { id: 'kpis', label: 'Dashboard Ejecutivo (Dirección)', icon: <BarChart3 className="w-5 h-5" /> },
+    { id: 'ordenes_compra', label: 'Órdenes de Compra (OC)', icon: <ShoppingCart className="w-5 h-5" /> },
     { id: 'historial', label: 'Historial de Cotizaciones', icon: <History className="w-5 h-5" /> },
     { id: 'aprobaciones', label: 'Aprobaciones Clave', icon: <CheckSquare className="w-5 h-5" /> },
     { id: 'financiero', label: 'Reportes Financieros', icon: <DollarSign className="w-5 h-5" /> }
   ],
   ventas: [
     { id: 'solicitudes', label: 'Bandeja Cuestionarios', icon: <Inbox className="w-5 h-5" /> },
-    { id: 'cotizador', label: 'Cotizador', icon: <Calculator className="w-5 h-5" /> },
+    { id: 'cotizador', label: 'Cotizador Inteligente', icon: <Calculator className="w-5 h-5" /> },
     { id: 'catalogo', label: 'Catálogo', icon: <Grid className="w-5 h-5" /> },
-    { id: 'historial', label: 'Historial de Cotizaciones', icon: <History className="w-5 h-5" /> },
-    { id: 'crm', label: 'CRM Prospectos', icon: <Kanban className="w-5 h-5" /> }
+    { id: 'crm', label: 'CRM Prospectos', icon: <Kanban className="w-5 h-5" /> },
+    { id: 'atencion_clientes', label: 'Atención a Clientes', icon: <Headphones className="w-5 h-5" /> },
+    { id: 'historial', label: 'Historial de Cotizaciones', icon: <History className="w-5 h-5" /> }
   ],
   operaciones: [
     { id: 'ordenes', label: 'Órdenes de Trabajo (OT)', icon: <ClipboardList className="w-5 h-5" /> },
-    { id: 'inventario', label: 'Almacén & Inventario', icon: <Boxes className="w-5 h-5" /> },
-    { id: 'campo', label: 'Bitácora & Firmas', icon: <Camera className="w-5 h-5" /> }
+    { id: 'almacen_movimientos', label: 'Ingresos y Egresos Almacén', icon: <ArrowDownUp className="w-5 h-5" /> },
+    { id: 'inventario', label: 'Control de Inventarios', icon: <Boxes className="w-5 h-5" /> },
+    { id: 'campo', label: 'Bitácora & Firmas de Campo', icon: <Camera className="w-5 h-5" /> }
   ],
   administracion: [
     { id: 'cuentas', label: 'Cuentas por Cobrar', icon: <Receipt className="w-5 h-5" /> },
-    { id: 'facturas', label: 'Facturación CFDI', icon: <FileCheck2 className="w-5 h-5" /> },
+    { id: 'cuentas_pagar', label: 'Cuentas por Pagar (CxP)', icon: <CreditCard className="w-5 h-5" /> },
+    { id: 'recibos', label: 'Recibos Simples (Sin Factura)', icon: <FileText className="w-5 h-5" /> },
+    { id: 'facturas', label: 'Facturación CFDI 4.0', icon: <FileCheck2 className="w-5 h-5" /> },
     { id: 'gastos', label: 'Nómina & Gastos', icon: <Wallet className="w-5 h-5" /> }
   ]
 };

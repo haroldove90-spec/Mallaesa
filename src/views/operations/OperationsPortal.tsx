@@ -21,6 +21,7 @@ import {
   Navigation as NavigationIcon,
   Phone
 } from 'lucide-react';
+import { WarehouseMovementsView } from '../../components/WarehouseMovementsView';
 
 export const OperationsPortal: React.FC<{
   activeModule: string;
@@ -618,6 +619,13 @@ export const OperationsPortal: React.FC<{
             </div>
           )}
         </div>
+      )}
+
+      {/* ========================================================
+          MÓDULO: ALMACÉN - SOLICITUDES DE INGRESO Y EGRESO
+         ======================================================== */}
+      {activeModule === 'almacen_movimientos' && (
+        <WarehouseMovementsView />
       )}
     </div>
   );

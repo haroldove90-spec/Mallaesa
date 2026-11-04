@@ -27,6 +27,7 @@ import {
 import { OfficialQuoteCalculatorView } from '../../components/OfficialQuoteCalculatorView';
 import { OfficialCatalogView } from '../../components/OfficialCatalogView';
 import { QuoteHistoryView } from '../../components/QuoteHistoryView';
+import { CustomerServiceView } from '../../components/CustomerServiceView';
 
 export const SalesPortal: React.FC<{
   activeModule: string;
@@ -749,6 +750,13 @@ export const SalesPortal: React.FC<{
             })}
           </div>
         </div>
+      )}
+
+      {/* ========================================================
+          MÓDULO: ATENCIÓN A CLIENTES & GARANTÍAS
+         ======================================================== */}
+      {activeModule === 'atencion_clientes' && (
+        <CustomerServiceView />
       )}
     </div>
   );

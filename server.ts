@@ -1,3 +1,4 @@
+import http from 'http';
 import express, { Request, Response } from 'express';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
@@ -138,16 +139,29 @@ app.post('/api/chat', async (req: Request, res: Response) => {
       });
       replyText = response.text || '';
     } catch (modelError: any) {
-      console.warn('Fallo con gemini-3.8-flash, probando con gemini-2.5-flash:', modelError?.message);
-      const fallbackResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: formattedContents,
-        config: {
-          systemInstruction: SYSTEM_INSTRUCTIONS,
-          temperature: 0.7,
-        }
-      });
-      replyText = fallbackResponse.text || '';
+      console.warn('Fallo con gemini-3.8-flash:', modelError?.message);
+      try {
+        const fallbackResponse = await ai.models.generateContent({
+          model: 'gemini-flash-latest',
+          contents: formattedContents,
+          config: {
+            systemInstruction: SYSTEM_INSTRUCTIONS,
+            temperature: 0.7,
+          }
+        });
+        replyText = fallbackResponse.text || '';
+      } catch (fallbackErr: any) {
+        console.warn('Fallo con gemini-flash-latest, probando gemini-3.1-flash-lite:', fallbackErr?.message);
+        const liteResponse = await ai.models.generateContent({
+          model: 'gemini-3.1-flash-lite',
+          contents: formattedContents,
+          config: {
+            systemInstruction: SYSTEM_INSTRUCTIONS,
+            temperature: 0.7,
+          }
+        });
+        replyText = liteResponse.text || '';
+      }
     }
 
     return res.json({ reply: replyText });
@@ -161,20 +175,26 @@ app.post('/api/chat', async (req: Request, res: Response) => {
 });
 
 async function startServer() {
+  const httpServer = http.createServer(app);
+
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.resolve(__dirname, 'dist')));
     app.get('*', (_req, res) => {
       res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
     });
   } else {
+    const isHmrDisabled = process.env.DISABLE_HMR === 'true';
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: isHmrDisabled ? false : { server: httpServer },
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
   }
 
-  app.listen(port, '0.0.0.0', () => {
+  httpServer.listen(port, '0.0.0.0', () => {
     console.log(`[Mallaesa Server] Escuchando en http://0.0.0.0:${port}`);
   });
 }
