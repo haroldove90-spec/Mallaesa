@@ -41,6 +41,8 @@ export interface IntelligentQuoteResult {
   total: number;
   advance50: number;
   balance50: number;
+  advancePercent?: number;
+  balancePercent?: number;
   estimatedWorkDays: number;
   warrantyYears: number;
   rawMaterials?: QuoteItem[];
@@ -654,8 +656,10 @@ export function exportQuoteToPdf(quote: IntelligentQuoteResult) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(60, 60, 60);
-  doc.text(`• Anticipo del 50% ($${quote.advance50.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN) para iniciar acopio y logística.`, 22, y + 9.5);
-  doc.text(`• Saldo finiquito del 50% ($${quote.balance50.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN) a la entrega y firma de conformidad.`, 22, y + 13.5);
+  const advPct = quote.advancePercent ?? 50;
+  const balPct = quote.balancePercent ?? (100 - advPct);
+  doc.text(`• Anticipo del ${advPct}% ($${quote.advance50.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN) para iniciar acopio y logística.`, 22, y + 9.5);
+  doc.text(`• Saldo finiquito del ${balPct}% ($${quote.balance50.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN) a la entrega y firma de conformidad.`, 22, y + 13.5);
   doc.text(`• Tiempo estimado de instalación en obra: ${quote.estimatedWorkDays} días hábiles.`, 22, y + 17.5);
   doc.text(`• Póliza de Garantía por escrito: ${quote.warrantyYears} años contra vicios ocultos y corrosión.`, 22, y + 21);
 

@@ -11,7 +11,9 @@ import {
   AccountsPayableItem,
   SimpleReceipt,
   WarehouseMovement,
-  CustomerServiceTicket
+  CustomerServiceTicket,
+  DailyWorkLog,
+  VehicleLog
 } from '../types';
 
 export const INITIAL_CREWS: CrewMember[] = [
@@ -966,4 +968,125 @@ export const INITIAL_CUSTOMER_SERVICE_TICKETS: CustomerServiceTicket[] = [
     resolvedAt: '2026-10-13 16:30'
   }
 ];
+
+export const INITIAL_DAILY_WORK_LOGS: DailyWorkLog[] = [
+  {
+    id: 'dwl-1',
+    folio: 'AVN-2026-081',
+    workOrderId: 'ot-0841',
+    workOrderFolio: 'OT-MAL-2026-8401',
+    clientName: 'Dra. Sofía Benavides Morales',
+    crewName: 'Cuadrilla Alfa',
+    leadInstaller: 'Roberto Mendoza',
+    date: '2026-10-11',
+    linearMetersInstalled: 60,
+    totalLinearMeters: 120,
+    accumulatedMeters: 60,
+    progressPercent: 50,
+    weatherConditions: 'Despejado / Óptimo',
+    soilConditions: 'Terreno limpio / Suave',
+    workDoneDescription: 'Colocación de 25 postes de línea y esquineros con cimentación en concreto hidráulico. Excavación de cepas terminada.',
+    incidentsOrDelays: 'Sin contratiempos. Material completo en sitio.',
+    leadSignature: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="60"><path d="M10 40 Q 50 10, 90 35 T 150 25" stroke="black" stroke-width="2" fill="none"/></svg>',
+    createdAt: '2026-10-11 17:30'
+  },
+  {
+    id: 'dwl-2',
+    folio: 'AVN-2026-082',
+    workOrderId: 'ot-0841',
+    workOrderFolio: 'OT-MAL-2026-8401',
+    clientName: 'Dra. Sofía Benavides Morales',
+    crewName: 'Cuadrilla Alfa',
+    leadInstaller: 'Roberto Mendoza',
+    date: '2026-10-12',
+    linearMetersInstalled: 60,
+    totalLinearMeters: 120,
+    accumulatedMeters: 120,
+    progressPercent: 100,
+    weatherConditions: 'Despejado / Óptimo',
+    soilConditions: 'Terreno limpio / Suave',
+    workDoneDescription: 'Tensado de malla ciclónica galvanizada calibre 12.5, colocación de 3 líneas de alambre de púas y barra superior. Entrega al cliente concluida.',
+    incidentsOrDelays: 'Obra terminada al 100% en tiempo pactado.',
+    leadSignature: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="60"><path d="M10 40 Q 50 10, 90 35 T 150 25" stroke="black" stroke-width="2" fill="none"/></svg>',
+    inspectorOrClientSignature: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="60"><path d="M20 30 Q 70 50, 110 20 T 140 40" stroke="black" stroke-width="2" fill="none"/></svg>',
+    createdAt: '2026-10-12 16:15'
+  }
+];
+
+export const INITIAL_VEHICLE_LOGS: VehicleLog[] = [
+  {
+    id: 'veh-1',
+    folio: 'VEH-2026-041',
+    vehicleName: 'Camioneta Nissan NP300 Estacas Blanca',
+    plates: 'NPK-4421',
+    driverName: 'Roberto Mendoza',
+    assignedCrew: 'Cuadrilla Alfa',
+    destinationProject: 'OT-MAL-2026-8401 / Residencia Carretera Nacional',
+    status: 'retornado',
+    departureDate: '2026-10-12',
+    departureTime: '07:30 AM',
+    departureMileage: 48210,
+    departureFuelLevel: 'Lleno',
+    departureConditions: 'Luces, frenos, llantas en buen estado. Herramienta completa de instalación y gato hidráulico a bordo.',
+    departurePhotoUrl: 'https://images.unsplash.com/photo-1559297434-fae8a1916a79?w=600&auto=format&fit=crop&q=80',
+    departureSignature: 'Firma Conductor: R. Mendoza',
+    returnDate: '2026-10-12',
+    returnTime: '17:15 PM',
+    returnMileage: 48285,
+    distanceTraveledKm: 75,
+    returnFuelLevel: '3/4',
+    returnConditions: 'Unidad entregada limpia, sin abolladuras ni fallas mecánicas. Batea limpia.',
+    returnPhotoUrl: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=600&auto=format&fit=crop&q=80',
+    returnSignature: 'Firma Almacén: Javier Salgado',
+    notes: 'Recorrido redondo Monterrey - Santiago N.L.',
+    createdAt: '2026-10-12 07:30'
+  },
+  {
+    id: 'veh-2',
+    folio: 'VEH-2026-042',
+    vehicleName: 'Camioneta Ford Ranger Diésel Gris',
+    plates: 'NL-341-B',
+    driverName: 'Eduardo Valenzuela',
+    assignedCrew: 'Cuadrilla Beta',
+    destinationProject: 'OT-MAL-2026-0840 / Rancho San Pedro, El Carmen',
+    status: 'retornado',
+    departureDate: '2026-10-14',
+    departureTime: '08:00 AM',
+    departureMileage: 62450,
+    departureFuelLevel: '3/4',
+    departureConditions: 'Neumáticos con presión adecuada, niveles de aceite y refrigerante verificados. Cinchos de carga asegurados.',
+    departurePhotoUrl: 'https://images.unsplash.com/photo-1559297434-fae8a1916a79?w=600&auto=format&fit=crop&q=80',
+    departureSignature: 'Firma Conductor: E. Valenzuela',
+    returnDate: '2026-10-14',
+    returnTime: '18:30 PM',
+    returnMileage: 62590,
+    distanceTraveledKm: 140,
+    returnFuelLevel: '1/2',
+    returnConditions: 'Regreso sin novedades mecánicas. Reporte de terracería sin averías.',
+    returnPhotoUrl: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=600&auto=format&fit=crop&q=80',
+    returnSignature: 'Firma Almacén: Javier Salgado',
+    notes: 'Traslado foráneo con remolque de postes de pino tratado.',
+    createdAt: '2026-10-14 08:00'
+  },
+  {
+    id: 'veh-3',
+    folio: 'VEH-2026-043',
+    vehicleName: 'Camión Rabón Chevrolet 3500 Plataforma',
+    plates: 'NL-928-C',
+    driverName: 'Marcos Soto',
+    assignedCrew: 'Cuadrilla Gamma',
+    destinationProject: 'Traslado de rollos de malla ciclónica y postes industriales',
+    status: 'en_ruta',
+    departureDate: '2026-10-22',
+    departureTime: '07:15 AM',
+    departureMileage: 115320,
+    departureFuelLevel: 'Lleno',
+    departureConditions: 'Plataforma con redilas aseguradas, lona impermeable y extintor vigente.',
+    departurePhotoUrl: 'https://images.unsplash.com/photo-1559297434-fae8a1916a79?w=600&auto=format&fit=crop&q=80',
+    departureSignature: 'Firma Conductor: M. Soto',
+    notes: 'En ruta de entrega y montaje perimetral.',
+    createdAt: '2026-10-22 07:15'
+  }
+];
+
 

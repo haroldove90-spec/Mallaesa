@@ -28,12 +28,16 @@ export const DirectorDashboard: React.FC<{
     approvals,
     resolveApproval,
     invoices,
-    inventory
+    inventory,
+    directorTargetMargin,
+    setDirectorTargetMargin
   } = useMallaesa();
 
   const [filterApprovalType, setFilterApprovalType] = useState<string>('todos');
   const [directorNotesInput, setDirectorNotesInput] = useState<string>('');
   const [selectedApprovalId, setSelectedApprovalId] = useState<string | null>(null);
+  const [isEditingMargin, setIsEditingMargin] = useState(false);
+  const [tempMarginInput, setTempMarginInput] = useState<number>(directorTargetMargin || 36.5);
 
   // KPIs Calculations
   const totalInvoiced = invoices
@@ -48,8 +52,12 @@ export const DirectorDashboard: React.FC<{
   const approvedQuotes = formalQuotes.filter(q => q.status === 'aprobada').length;
   const conversionRate = totalQuotesSent > 0 ? ((approvedQuotes / totalQuotesSent) * 100).toFixed(1) : '0';
 
-  // Average margin estimated at 36.5%
-  const averageMargin = '36.5%';
+  // Margen Real Calculado sobre Cotizaciones vs Margen Objetivo Configurable
+  const totalCost = formalQuotes.reduce((sum, q) => sum + (q.rawMaterialsCost || (q.total * 0.635)), 0);
+  const totalRevenue = formalQuotes.reduce((sum, q) => sum + q.total, 0);
+  const realMarginCalculated = totalRevenue > 0
+    ? (((totalRevenue - totalCost) / totalRevenue) * 100).toFixed(1)
+    : '36.5';
 
   // Approvals filtering
   const pendingApprovals = approvals.filter(a => a.status === 'pendiente');
@@ -166,24 +174,114 @@ export const DirectorDashboard: React.FC<{
               </div>
             </div>
 
-            {/* KPI 4: Margen de Ganancia */}
-            <div className="bg-white border border-stone-200 rounded-xl p-5 shadow-xs flex flex-col justify-between">
+            {/* KPI 4: Margen de Ganancia Dinámico */}
+            <div className="bg-white border border-stone-200 rounded-xl p-5 shadow-xs flex flex-col justify-between relative">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
-                  Margen Bruto de Obra
+                  Margen Bruto Real
                 </span>
-                <div className="p-2 bg-stone-100 text-[#898A82] rounded-lg">
-                  <PieChart className="w-5 h-5" />
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTempMarginInput(directorTargetMargin || 36.5);
+                    setIsEditingMargin(true);
+                  }}
+                  title="Configurar Margen Meta de Dirección"
+                  className="p-1.5 bg-stone-100 hover:bg-stone-200 text-[#898A82] hover:text-black rounded-lg transition cursor-pointer"
+                >
+                  <PieChart className="w-4 h-4" />
+                </button>
               </div>
               <div className="mt-4">
-                <span className="text-2xl font-black text-black block">
-                  {averageMargin}
-                </span>
-                <span className="text-xs text-stone-500 font-semibold block mt-1">
-                  Objetivo meta corporativa: 35.0%
-                </span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black text-black block">
+                    {realMarginCalculated}%
+                  </span>
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                    Number(realMarginCalculated) >= (directorTargetMargin || 35)
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {Number(realMarginCalculated) >= (directorTargetMargin || 35) ? '✓ En Meta' : 'Bajo Meta'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mt-1 text-xs text-stone-500 font-semibold">
+                  <span>Meta Configurada: <strong className="text-black">{directorTargetMargin}%</strong></span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTempMarginInput(directorTargetMargin || 36.5);
+                      setIsEditingMargin(true);
+                    }}
+                    className="text-[11px] text-[#898A82] hover:text-black underline font-bold cursor-pointer"
+                  >
+                    Ajustar
+                  </button>
+                </div>
               </div>
+
+              {/* Popover / Mini-Modal de edición de Margen Meta */}
+              {isEditingMargin && (
+                <div className="absolute inset-0 bg-white/95 backdrop-blur-xs p-4 rounded-xl flex flex-col justify-between border-2 border-black z-20 shadow-xl">
+                  <div className="flex justify-between items-center border-b border-stone-200 pb-1.5">
+                    <span className="text-xs font-bold text-black uppercase">Definir Margen Objetivo</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingMargin(false)}
+                      className="text-stone-400 hover:text-black p-0.5"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="space-y-1.5 py-1">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="1"
+                        max="90"
+                        step="0.5"
+                        value={tempMarginInput}
+                        onChange={e => setTempMarginInput(Number(e.target.value))}
+                        className="w-20 p-1.5 text-center font-bold text-sm bg-stone-50 border border-stone-300 rounded-lg text-black focus:outline-hidden"
+                      />
+                      <span className="text-xs font-bold text-stone-600">% Objetivo</span>
+                    </div>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {[30, 35, 36.5, 40].map(m => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setTempMarginInput(m)}
+                          className={`text-[10px] px-2 py-0.5 rounded font-bold transition cursor-pointer ${
+                            tempMarginInput === m ? 'bg-black text-white' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                          }`}
+                        >
+                          {m}%
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1 border-t border-stone-200">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingMargin(false)}
+                      className="text-[11px] font-bold text-stone-500 hover:text-stone-800 px-2 py-1"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDirectorTargetMargin(tempMarginInput);
+                        setIsEditingMargin(false);
+                      }}
+                      className="text-[11px] font-bold bg-black text-white px-3 py-1 rounded-md"
+                    >
+                      Guardar Meta
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

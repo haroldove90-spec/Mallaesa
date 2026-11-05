@@ -68,7 +68,9 @@ export interface FormalQuote {
   iva: number;
   total: number;
   advanceRequired: number; // 50%
+  advancePercent?: number;
   balanceRemaining: number; // 50%
+  balancePercent?: number;
   estimatedDays: number;
   status: 'borrador' | 'enviada' | 'aprobada' | 'rechazada';
   createdAt: string;
@@ -107,10 +109,12 @@ export interface Project {
     | 'finalizado';
   totalAmount: number;
   advanceAmount: number;
+  advancePercent?: number; // Porcentaje de anticipo personalizado (default: 50)
   advancePaid: boolean;
   advanceDate?: string;
   advanceReceipt?: string;
   balanceAmount: number;
+  balancePercent?: number; // Porcentaje de finiquito personalizado (default: 50)
   balancePaid: boolean;
   balanceDate?: string;
   workOrderId?: string;
@@ -306,4 +310,58 @@ export interface CustomerServiceTicket {
   resolutionNotes?: string;
   resolvedAt?: string;
 }
+
+export interface DailyWorkLog {
+  id: string;
+  folio: string; // e.g. BIT-2026-001
+  workOrderId: string;
+  workOrderFolio: string;
+  clientName: string;
+  crewName: string;
+  leadInstaller: string;
+  date: string; // YYYY-MM-DD
+  linearMetersInstalled: number; // Metros instalados en la jornada
+  totalLinearMeters: number; // Metros totales del proyecto
+  accumulatedMeters: number; // Metros acumulados incluyendo hoy
+  progressPercent: number; // % avance total calculado
+  weatherConditions: 'Despejado / Óptimo' | 'Lluvia ligera' | 'Calor extremo' | 'Viento fuerte';
+  soilConditions: 'Terreno limpio / Suave' | 'Roca / Difícil' | 'Barda / Cimentación previa' | 'Desnivel pronunciado';
+  workDoneDescription: string;
+  incidentsOrDelays?: string;
+  leadSignature: string; // Firma táctil en base64
+  inspectorOrClientSignature?: string;
+  photos?: string[];
+  createdAt: string;
+}
+
+export interface VehicleLog {
+  id: string;
+  folio: string; // e.g. VEH-2026-101
+  vehicleName: string; // e.g. Nissan NP300 Estacas Blanca
+  plates: string; // e.g. NPK-4421
+  driverName: string; // Chofer o responsable asignado
+  assignedCrew?: string; // e.g. Cuadrilla Alfa
+  destinationProject?: string; // e.g. OT-MAL-2026-901 / Terreno Industrial
+  status: 'en_ruta' | 'retornado' | 'mantenimiento';
+  // Salida
+  departureDate: string;
+  departureTime: string;
+  departureMileage: number; // Km al salir
+  departureFuelLevel: '1/4' | '1/2' | '3/4' | 'Lleno';
+  departureConditions: string; // Revisión física/mecánica de salida
+  departurePhotoUrl?: string; // Fotografía de la unidad al salir
+  departureSignature: string; // Firma del conductor al salir
+  // Llegada / Retorno
+  returnDate?: string;
+  returnTime?: string;
+  returnMileage?: number; // Km al regresar
+  distanceTraveledKm?: number; // Calculado (llegada - salida)
+  returnFuelLevel?: '1/4' | '1/2' | '3/4' | 'Lleno';
+  returnConditions?: string; // Estado de la unidad al retornar
+  returnPhotoUrl?: string; // Fotografía de la unidad al regresar
+  returnSignature?: string; // Firma de entrega en almacén/taller
+  notes?: string;
+  createdAt: string;
+}
+
 

@@ -79,8 +79,11 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
     }
   }, [preloadedQuoteDraft, clearPreloadedQuoteDraft]);
 
-  // Margen de ganancia para el administrador (Default: 20% como solicitó el usuario)
+  // Margen de ganancia para el administrador (100% personalizable por el usuario)
   const [profitMarginPercent, setProfitMarginPercent] = useState<number>(20);
+
+  // Esquema de cobro configurable (Anticipo / Saldo de Finiquito)
+  const [advancePercent, setAdvancePercent] = useState<number>(50);
 
   // Client details for official quote
   const [clientData, setClientData] = useState({
@@ -287,7 +290,7 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
 
   const iva = Number((clientSubtotal * 0.16).toFixed(2));
   const total = Number((clientSubtotal + iva).toFixed(2));
-  const advance50 = Number((total * 0.5).toFixed(2));
+  const advance50 = Number((total * (advancePercent / 100)).toFixed(2));
   const balance50 = Number((total - advance50).toFixed(2));
 
   // Generar Cotización Oficial
@@ -363,6 +366,8 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
       total,
       advance50,
       balance50,
+      advancePercent,
+      balancePercent: 100 - advancePercent,
       estimatedWorkDays: Math.max(2, Math.ceil(cart.length / 2)),
       warrantyYears: 1,
       // Auditoría interna admin
@@ -747,49 +752,51 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
               </table>
             </div>
 
-            {/* Control de Margen de Ganancia (+20% Automático) */}
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {/* Control de Margen de Ganancia (100% Personalizable por el Usuario) */}
+            <div className="bg-emerald-50 border-2 border-emerald-300 rounded-xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="space-y-1">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <TrendingUp className="w-5 h-5 text-emerald-800" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-900">
-                    Margen de Ganancia Comercial
+                  <span className="text-xs font-black uppercase tracking-wider text-emerald-950">
+                    Margen de Utilidad sobre Materia Prima
                   </span>
-                  <span className="text-xs font-mono font-bold px-2 py-0.5 bg-emerald-200 text-emerald-900 rounded">
-                    +20% Automático
+                  <span className="text-xs font-mono font-bold px-2.5 py-0.5 bg-emerald-200 text-emerald-950 rounded-full border border-emerald-300">
+                    +{profitMarginPercent}% Configurado (100% Personalizable)
                   </span>
                 </div>
                 <p className="text-xs text-emerald-800 max-w-xl">
-                  El sistema suma automáticamente tu porcentaje de ganancia sobre el costo total de materia prima (${rawMaterialsCost.toFixed(2)} MXN).
+                  El porcentaje de utilidad es totalmente editable según la negociación o política requerida. Puedes teclear cualquier valor o elegir un atajo. El precio sugerido se recalcula en tiempo real sobre los ${rawMaterialsCost.toFixed(2)} MXN de materia prima.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-bold text-stone-700">Margen:</span>
-                {[15, 20, 25, 30].map(pct => (
-                  <button
-                    key={pct}
-                    type="button"
-                    onClick={() => setProfitMarginPercent(pct)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                      profitMarginPercent === pct
-                        ? 'bg-emerald-800 text-white shadow-xs'
-                        : 'bg-white border border-emerald-300 text-emerald-900 hover:bg-emerald-100'
-                    }`}
-                  >
-                    {pct}% {pct === 20 ? '(Recomendado)' : ''}
-                  </button>
-                ))}
-                <div className="flex items-center bg-white border border-emerald-300 rounded-lg px-2 py-1">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {[15, 20, 25, 30, 35, 40, 50].map(pct => (
+                    <button
+                      key={pct}
+                      type="button"
+                      onClick={() => setProfitMarginPercent(pct)}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                        profitMarginPercent === pct
+                          ? 'bg-emerald-800 text-white shadow-xs'
+                          : 'bg-white border border-emerald-300 text-emerald-900 hover:bg-emerald-100'
+                      }`}
+                    >
+                      {pct}%
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-1.5 bg-white border-2 border-emerald-400 rounded-lg px-2.5 py-1 shadow-2xs">
+                  <span className="text-[10px] font-bold uppercase text-stone-500">Otro %:</span>
                   <input
                     type="number"
                     min="0"
                     max="300"
                     value={profitMarginPercent}
                     onChange={e => setProfitMarginPercent(Math.max(0, Number(e.target.value)))}
-                    className="w-12 text-xs font-mono font-bold text-center text-black focus:outline-hidden"
+                    className="w-12 text-xs font-mono font-black text-center text-black focus:outline-hidden"
                   />
-                  <span className="text-xs font-bold text-stone-500">%</span>
+                  <span className="text-xs font-bold text-emerald-800">%</span>
                 </div>
               </div>
             </div>
@@ -1083,8 +1090,37 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
                 <div className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight">
                   Total Cotización Cliente: ${total.toFixed(2)} <span className="text-xs font-normal text-stone-400">MXN</span>
                 </div>
-                <div className="text-[11px] sm:text-xs text-stone-400">
-                  Anticipo 50%: <strong className="text-white">${advance50.toFixed(2)} MXN</strong> • Saldo a la entrega: <strong className="text-white">${balance50.toFixed(2)} MXN</strong>
+                <div className="pt-2 border-t border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="text-[11px] sm:text-xs text-stone-300 flex items-center gap-2 flex-wrap">
+                    <span className="text-stone-400 font-semibold">Esquema de Pago:</span>
+                    <strong className="text-emerald-400 font-mono">Anticipo {advancePercent}% (${advance50.toFixed(2)} MXN)</strong>
+                    <span className="text-stone-600">•</span>
+                    <strong className="text-stone-300 font-mono">Finiquito {100 - advancePercent}% (${balance50.toFixed(2)} MXN)</strong>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] font-bold uppercase text-stone-400">Ajustar:</span>
+                    {[
+                      { adv: 50, label: '50/50' },
+                      { adv: 60, label: '60/40' },
+                      { adv: 70, label: '70/30' },
+                      { adv: 80, label: '80/20' },
+                      { adv: 100, label: '100% Contado' }
+                    ].map(sch => (
+                      <button
+                        key={sch.adv}
+                        type="button"
+                        onClick={() => setAdvancePercent(sch.adv)}
+                        className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold transition cursor-pointer ${
+                          advancePercent === sch.adv
+                            ? 'bg-emerald-500 text-black shadow-xs'
+                            : 'bg-stone-800 border border-stone-700 text-stone-300 hover:bg-stone-700'
+                        }`}
+                      >
+                        {sch.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 

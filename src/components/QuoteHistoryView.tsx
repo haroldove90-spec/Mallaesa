@@ -103,6 +103,8 @@ export const QuoteHistoryView: React.FC<QuoteHistoryViewProps> = ({ onGoToQuote 
       total: quote.total,
       advance50: quote.advanceRequired,
       balance50: quote.balanceRemaining,
+      advancePercent: quote.advancePercent ?? 50,
+      balancePercent: quote.balancePercent ?? 50,
       estimatedWorkDays: quote.estimatedDays || 3,
       warrantyYears: 1,
       rawMaterials: quote.rawMaterials || quote.items,

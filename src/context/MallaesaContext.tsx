@@ -16,7 +16,9 @@ import {
   AccountsPayableItem,
   SimpleReceipt,
   WarehouseMovement,
-  CustomerServiceTicket
+  CustomerServiceTicket,
+  DailyWorkLog,
+  VehicleLog
 } from '../types';
 import {
   INITIAL_REQUESTS,
@@ -31,7 +33,9 @@ import {
   INITIAL_ACCOUNTS_PAYABLE,
   INITIAL_SIMPLE_RECEIPTS,
   INITIAL_WAREHOUSE_MOVEMENTS,
-  INITIAL_CUSTOMER_SERVICE_TICKETS
+  INITIAL_CUSTOMER_SERVICE_TICKETS,
+  INITIAL_DAILY_WORK_LOGS,
+  INITIAL_VEHICLE_LOGS
 } from '../data/initialData';
 import { PreloadedQuoteDraft } from '../utils/assistantQuoteParser';
 
@@ -56,6 +60,10 @@ interface MallaesaContextType {
   simpleReceipts: SimpleReceipt[];
   warehouseMovements: WarehouseMovement[];
   customerServiceTickets: CustomerServiceTicket[];
+  dailyWorkLogs: DailyWorkLog[];
+  vehicleLogs: VehicleLog[];
+  directorTargetMargin: number;
+  setDirectorTargetMargin: (margin: number) => void;
   noSampleDataMode: boolean;
   clearAllSampleData: () => void;
   setNoSampleDataMode: (enabled: boolean) => void;
@@ -93,6 +101,8 @@ interface MallaesaContextType {
     total: number;
     advance50: number;
     balance50: number;
+    advancePercent?: number;
+    balancePercent?: number;
     estimatedWorkDays: number;
     rawMaterials?: QuoteItem[];
     rawMaterialsCost?: number;
@@ -143,6 +153,25 @@ interface MallaesaContextType {
   // Atención a Clientes
   createCustomerServiceTicket: (ticket: Omit<CustomerServiceTicket, 'id' | 'folio' | 'createdAt'>) => CustomerServiceTicket;
   updateCustomerServiceTicketStatus: (ticketId: string, status: CustomerServiceTicket['status'], resolutionNotes?: string) => void;
+
+  // Avance Diario de Cuadrillas
+  addDailyWorkLog: (log: Omit<DailyWorkLog, 'id' | 'folio' | 'createdAt'>) => DailyWorkLog;
+
+  // Control Vehicular & Flotilla
+  addVehicleLog: (log: Omit<VehicleLog, 'id' | 'folio' | 'createdAt'>) => VehicleLog;
+  updateVehicleLogReturn: (id: string, returnData: {
+    returnDate: string;
+    returnTime: string;
+    returnMileage: number;
+    returnFuelLevel: '1/4' | '1/2' | '3/4' | 'Lleno';
+    returnConditions?: string;
+    returnPhotoUrl?: string;
+    returnSignature: string;
+    notes?: string;
+  }) => void;
+
+  // Cuentas por Cobrar: Esquema de Pagos Personalizado (Anticipo / Finiquito %)
+  updateProjectPaymentScheme: (projectId: string, advancePercent: number) => void;
 }
 
 const MallaesaContext = createContext<MallaesaContextType | undefined>(undefined);
@@ -161,7 +190,10 @@ const STORAGE_KEYS = {
   ACCOUNTS_PAYABLE: 'mallaesa_accounts_payable',
   SIMPLE_RECEIPTS: 'mallaesa_simple_receipts',
   WAREHOUSE_MOVEMENTS: 'mallaesa_warehouse_movements',
-  CUSTOMER_SERVICE_TICKETS: 'mallaesa_cs_tickets'
+  CUSTOMER_SERVICE_TICKETS: 'mallaesa_cs_tickets',
+  DAILY_WORK_LOGS: 'mallaesa_daily_work_logs',
+  VEHICLE_LOGS: 'mallaesa_vehicle_logs',
+  DIRECTOR_TARGET_MARGIN: 'mallaesa_director_target_margin'
 };
 
 export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -280,9 +312,46 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return saved ? JSON.parse(saved) : INITIAL_CUSTOMER_SERVICE_TICKETS;
   });
 
+  const [dailyWorkLogs, setDailyWorkLogs] = useState<DailyWorkLog[]>(() => {
+    if (localStorage.getItem(STORAGE_KEYS.NO_SAMPLE) === 'true') {
+      const saved = localStorage.getItem(STORAGE_KEYS.DAILY_WORK_LOGS);
+      return saved ? JSON.parse(saved) : [];
+    }
+    const saved = localStorage.getItem(STORAGE_KEYS.DAILY_WORK_LOGS);
+    return saved ? JSON.parse(saved) : INITIAL_DAILY_WORK_LOGS;
+  });
+
+  const [vehicleLogs, setVehicleLogs] = useState<VehicleLog[]>(() => {
+    if (localStorage.getItem(STORAGE_KEYS.NO_SAMPLE) === 'true') {
+      const saved = localStorage.getItem(STORAGE_KEYS.VEHICLE_LOGS);
+      return saved ? JSON.parse(saved) : [];
+    }
+    const saved = localStorage.getItem(STORAGE_KEYS.VEHICLE_LOGS);
+    return saved ? JSON.parse(saved) : INITIAL_VEHICLE_LOGS;
+  });
+
+  const [directorTargetMargin, setDirectorTargetMarginState] = useState<number>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.DIRECTOR_TARGET_MARGIN);
+    return saved ? Number(saved) : 36.5;
+  });
+
+  const setDirectorTargetMargin = (margin: number) => {
+    const valid = Math.max(1, Math.min(100, margin));
+    setDirectorTargetMarginState(valid);
+    localStorage.setItem(STORAGE_KEYS.DIRECTOR_TARGET_MARGIN, String(valid));
+  };
+
   const crews = INITIAL_CREWS;
 
   // Synchronize to localStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.DAILY_WORK_LOGS, JSON.stringify(dailyWorkLogs));
+  }, [dailyWorkLogs]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.VEHICLE_LOGS, JSON.stringify(vehicleLogs));
+  }, [vehicleLogs]);
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(requests));
   }, [requests]);
@@ -360,6 +429,8 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setSimpleReceipts([]);
     setWarehouseMovements([]);
     setCustomerServiceTickets([]);
+    setDailyWorkLogs([]);
+    setVehicleLogs([]);
     localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.QUOTES, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify([]));
@@ -371,6 +442,8 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem(STORAGE_KEYS.SIMPLE_RECEIPTS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.WAREHOUSE_MOVEMENTS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.CUSTOMER_SERVICE_TICKETS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.DAILY_WORK_LOGS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.VEHICLE_LOGS, JSON.stringify([]));
   };
 
   const restoreDemoData = () => {
@@ -388,6 +461,10 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setSimpleReceipts(INITIAL_SIMPLE_RECEIPTS);
     setWarehouseMovements(INITIAL_WAREHOUSE_MOVEMENTS);
     setCustomerServiceTickets(INITIAL_CUSTOMER_SERVICE_TICKETS);
+    setDailyWorkLogs(INITIAL_DAILY_WORK_LOGS);
+    setVehicleLogs(INITIAL_VEHICLE_LOGS);
+    setDirectorTargetMarginState(36.5);
+    localStorage.setItem(STORAGE_KEYS.DIRECTOR_TARGET_MARGIN, '36.5');
   };
 
   // Phase 1: Client submits questionnaire
@@ -464,6 +541,8 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     total: number;
     advance50: number;
     balance50: number;
+    advancePercent?: number;
+    balancePercent?: number;
     estimatedWorkDays: number;
     rawMaterials?: QuoteItem[];
     rawMaterialsCost?: number;
@@ -475,6 +554,8 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const reqId = `req-${Date.now()}`;
     const quoteId = `quote-${Date.now()}`;
     const projId = `proj-${Date.now()}`;
+    const advPct = data.advancePercent ?? 50;
+    const balPct = data.balancePercent ?? (100 - advPct);
 
     const newReq: QuoteRequest = {
       id: reqId,
@@ -513,6 +594,8 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       total: data.total,
       advanceRequired: data.advance50,
       balanceRemaining: data.balance50,
+      advancePercent: advPct,
+      balancePercent: balPct,
       estimatedDays: data.estimatedWorkDays,
       status: 'enviada',
       createdAt: now,
@@ -541,8 +624,10 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       status: 'cotizacion_enviada',
       totalAmount: data.total,
       advanceAmount: data.advance50,
+      advancePercent: advPct,
       advancePaid: false,
       balanceAmount: data.balance50,
+      balancePercent: balPct,
       balancePaid: false,
       createdAt: now,
       updatedAt: now
@@ -1209,6 +1294,75 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   };
 
+  // Avance Diario de Cuadrillas
+  const addDailyWorkLog = (logData: Omit<DailyWorkLog, 'id' | 'folio' | 'createdAt'>): DailyWorkLog => {
+    const nextNum = dailyWorkLogs.length + 1;
+    const folio = `AVN-${new Date().getFullYear()}-${String(nextNum).padStart(3, '0')}`;
+    const newLog: DailyWorkLog = {
+      ...logData,
+      id: `dwl-${Date.now()}`,
+      folio,
+      createdAt: new Date().toISOString()
+    };
+    setDailyWorkLogs(prev => [newLog, ...prev]);
+    return newLog;
+  };
+
+  // Control Vehicular & Flotilla
+  const addVehicleLog = (logData: Omit<VehicleLog, 'id' | 'folio' | 'createdAt'>): VehicleLog => {
+    const nextNum = vehicleLogs.length + 1;
+    const folio = `VEH-${new Date().getFullYear()}-${String(nextNum).padStart(3, '0')}`;
+    const newLog: VehicleLog = {
+      ...logData,
+      id: `veh-${Date.now()}`,
+      folio,
+      createdAt: new Date().toISOString()
+    };
+    setVehicleLogs(prev => [newLog, ...prev]);
+    return newLog;
+  };
+
+  const updateVehicleLogReturn = (id: string, returnData: {
+    returnDate: string;
+    returnTime: string;
+    returnMileage: number;
+    returnFuelLevel: '1/4' | '1/2' | '3/4' | 'Lleno';
+    returnConditions?: string;
+    returnPhotoUrl?: string;
+    returnSignature: string;
+    notes?: string;
+  }) => {
+    setVehicleLogs(prev => prev.map(v => {
+      if (v.id !== id) return v;
+      const distanceTraveledKm = Math.max(0, returnData.returnMileage - v.departureMileage);
+      return {
+        ...v,
+        ...returnData,
+        distanceTraveledKm,
+        status: 'retornado' as const
+      };
+    }));
+  };
+
+  // Cuentas por Cobrar: Esquema Flexible de Anticipo y Finiquito
+  const updateProjectPaymentScheme = (projectId: string, advancePercent: number) => {
+    const validAdvance = Math.min(100, Math.max(0, advancePercent));
+    const validBalance = 100 - validAdvance;
+    setProjects(prev => prev.map(p => {
+      if (p.id !== projectId) return p;
+      const advanceAmount = Number(((p.totalAmount * validAdvance) / 100).toFixed(2));
+      const balanceAmount = Number((p.totalAmount - advanceAmount).toFixed(2));
+      return {
+        ...p,
+        advancePercent: validAdvance,
+        balancePercent: validBalance,
+        advanceAmount,
+        balanceAmount,
+        updatedAt: new Date().toISOString()
+      };
+    }));
+  };
+
   const loadQuoteDraftIntoCalculator = (draft: PreloadedQuoteDraft) => {
     setPreloadedQuoteDraft(draft);
     setActiveRole('cotizador');
@@ -1242,6 +1396,10 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         simpleReceipts,
         warehouseMovements,
         customerServiceTickets,
+        dailyWorkLogs,
+        vehicleLogs,
+        directorTargetMargin,
+        setDirectorTargetMargin,
         noSampleDataMode,
         clearAllSampleData,
         setNoSampleDataMode,
@@ -1268,7 +1426,11 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         createSimpleReceipt,
         registerWarehouseMovement,
         createCustomerServiceTicket,
-        updateCustomerServiceTicketStatus
+        updateCustomerServiceTicketStatus,
+        addDailyWorkLog,
+        addVehicleLog,
+        updateVehicleLogReturn,
+        updateProjectPaymentScheme
       }}
     >
       {children}

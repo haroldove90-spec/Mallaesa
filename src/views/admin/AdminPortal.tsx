@@ -31,7 +31,8 @@ export const AdminPortal: React.FC<{
     invoices,
     registerAdvancePayment,
     registerFinalPayment,
-    approvals
+    approvals,
+    updateProjectPaymentScheme
   } = useMallaesa();
 
   // Modal / Inputs for Advance Payment
@@ -43,15 +44,19 @@ export const AdminPortal: React.FC<{
   const [finalRfcInput, setFinalRfcInput] = useState<string>('XAXX010101000');
   const [finalPaymentWay, setFinalPaymentWay] = useState<Invoice['paymentWay']>('Transferencia SPEI (03)');
 
+  // Modal para Personalizar Esquema de Anticipos / Finiquito
+  const [editingSchemeProjectId, setEditingSchemeProjectId] = useState<string | null>(null);
+  const [customAdvancePercent, setCustomAdvancePercent] = useState<number>(50);
+
   // Active invoice preview modal
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
 
-  // Projects waiting for advance (50%)
+  // Projects waiting for advance
   const projectsWaitingAdvance = projects.filter(
     p => p.phase >= 2 && !p.advancePaid && p.totalAmount > 0
   );
 
-  // Projects waiting for final balance (50%)
+  // Projects waiting for final balance
   const projectsWaitingBalance = projects.filter(
     p => p.advancePaid && !p.balancePaid
   );
@@ -70,7 +75,8 @@ export const AdminPortal: React.FC<{
       confetti({ particleCount: 70, spread: 60 });
     } catch {}
 
-    alert(`¡Anticipo del 50% ($${proj.advanceAmount.toLocaleString('es-MX')} MXN) registrado con éxito! El proyecto ha avanzado a Fase 4 para programar su Orden de Trabajo (OT).`);
+    const advPct = proj.advancePercent || 50;
+    alert(`¡Anticipo del ${advPct}% ($${proj.advanceAmount.toLocaleString('es-MX')} MXN) registrado con éxito! El proyecto ha avanzado a Fase 4 para programar su Orden de Trabajo (OT).`);
     setSelectedProjectIdForAdvance('');
     setAdvanceReceiptInput('');
   };
@@ -85,7 +91,8 @@ export const AdminPortal: React.FC<{
       confetti({ particleCount: 100, spread: 80 });
     } catch {}
 
-    alert(`¡Finiquito del 50% registrado y Factura CFDI 4.0 (${invoice.seriesNumber}) emitida con éxito! El proyecto queda totalmente cerrado y concluido.`);
+    const balPct = proj.balancePercent || 50;
+    alert(`¡Finiquito del ${balPct}% ($${proj.balanceAmount.toLocaleString('es-MX')} MXN) registrado y Factura CFDI 4.0 (${invoice.seriesNumber}) emitida con éxito! El proyecto queda totalmente cerrado y concluido.`);
     setSelectedProjectIdForFinal('');
   };
 
@@ -134,7 +141,20 @@ export const AdminPortal: React.FC<{
                       className="p-4 border border-stone-200 rounded-lg bg-stone-50 text-xs space-y-2"
                     >
                       <div className="flex justify-between items-center font-bold">
-                        <span className="font-mono text-black">{p.folio}</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-black">{p.folio}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingSchemeProjectId(p.id);
+                              setCustomAdvancePercent(p.advancePercent || 50);
+                            }}
+                            className="text-[10px] font-bold px-2 py-0.5 rounded bg-stone-200 hover:bg-stone-300 text-stone-800 transition cursor-pointer"
+                            title="Cambiar porcentaje de anticipo y finiquito"
+                          >
+                            Esquema: {p.advancePercent || 50}% / {p.balancePercent || 50}% ✎
+                          </button>
+                        </div>
                         <span className="text-black text-sm">
                           ${p.advanceAmount.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN
                         </span>
@@ -155,9 +175,9 @@ export const AdminPortal: React.FC<{
                         />
                         <button
                           onClick={() => handleRegisterAdvance(p.id)}
-                          className="px-3 py-1.5 bg-black hover:bg-stone-800 text-white font-bold rounded text-xs transition cursor-pointer"
+                          className="px-3 py-1.5 bg-black hover:bg-stone-800 text-white font-bold rounded text-xs transition cursor-pointer shrink-0"
                         >
-                          Confirmar Anticipo 50%
+                          Confirmar Anticipo ({p.advancePercent || 50}%)
                         </button>
                       </div>
                     </div>
@@ -166,13 +186,13 @@ export const AdminPortal: React.FC<{
               )}
             </div>
 
-            {/* 2. Proyectos Esperando Liquidación Final (50%) */}
+            {/* 2. Proyectos Esperando Liquidación Final */}
             <div className="bg-white border border-stone-200 rounded-xl p-5 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
                   <h3 className="font-bold text-sm text-black">
-                    Saldos / Finiquitos por Cobrar (50%)
+                    Saldos / Finiquitos por Cobrar
                   </h3>
                 </div>
                 <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
@@ -199,7 +219,12 @@ export const AdminPortal: React.FC<{
                         }`}
                       >
                         <div className="flex justify-between items-center font-bold">
-                          <span className="font-mono text-black">{p.folio}</span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-black">{p.folio}</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-900 border border-blue-200">
+                              Finiquito: {p.balancePercent || 50}%
+                            </span>
+                          </div>
                           <span className="text-black text-sm">
                             ${p.balanceAmount.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN
                           </span>
@@ -226,9 +251,9 @@ export const AdminPortal: React.FC<{
                           />
                           <button
                             onClick={() => handleRegisterFinal(p.id)}
-                            className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded text-xs transition cursor-pointer"
+                            className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded text-xs transition cursor-pointer shrink-0"
                           >
-                            Cobrar Finiquito & Emitir CFDI
+                            Cobrar Finiquito ({p.balancePercent || 50}%) & Emitir CFDI
                           </button>
                         </div>
                       </div>
@@ -238,6 +263,120 @@ export const AdminPortal: React.FC<{
               )}
             </div>
           </div>
+
+          {/* MODAL: MODIFICAR ESQUEMA DE PAGOS (ANTICIPO / FINIQUITO) */}
+          {editingSchemeProjectId && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+              <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-stone-200 space-y-4">
+                <div className="flex justify-between items-center border-b border-stone-200 pb-2">
+                  <h3 className="text-base font-bold text-black flex items-center gap-2">
+                    Personalizar Esquema de Cobro
+                  </h3>
+                  <button
+                    onClick={() => setEditingSchemeProjectId(null)}
+                    className="text-stone-400 hover:text-black p-1 text-sm font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <p className="text-xs text-stone-600">
+                  Modifica los porcentajes de anticipo y finiquito para este proyecto. Los montos se recalcularán automáticamente.
+                </p>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">
+                      Porcentaje de Anticipo: <strong className="text-black text-sm">{customAdvancePercent}%</strong>
+                    </label>
+                    <input
+                      type="range"
+                      min="10"
+                      max="100"
+                      step="5"
+                      value={customAdvancePercent}
+                      onChange={e => setCustomAdvancePercent(Number(e.target.value))}
+                      className="w-full accent-black cursor-pointer"
+                    />
+                    <div className="flex justify-between text-[11px] text-stone-500 font-semibold mt-1">
+                      <span>Anticipo: {customAdvancePercent}%</span>
+                      <span>Finiquito: {100 - customAdvancePercent}%</span>
+                    </div>
+                  </div>
+
+                  {/* Botones de esquemas rápidos */}
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {[
+                      { label: '50% / 50% (Estándar)', adv: 50 },
+                      { label: '60% / 40%', adv: 60 },
+                      { label: '70% / 30%', adv: 70 },
+                      { label: '100% Contado', adv: 100 }
+                    ].map(opt => (
+                      <button
+                        key={opt.adv}
+                        type="button"
+                        onClick={() => setCustomAdvancePercent(opt.adv)}
+                        className={`p-2 rounded-lg font-bold border text-center transition cursor-pointer ${
+                          customAdvancePercent === opt.adv
+                            ? 'bg-black text-white border-black shadow-xs'
+                            : 'bg-stone-50 text-stone-800 border-stone-300 hover:bg-stone-100'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Previsualización de montos calculados */}
+                  {(() => {
+                    const targetProj = projects.find(p => p.id === editingSchemeProjectId);
+                    if (!targetProj) return null;
+                    const previewAdvance = (targetProj.totalAmount * customAdvancePercent) / 100;
+                    const previewBalance = targetProj.totalAmount - previewAdvance;
+
+                    return (
+                      <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 text-xs space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-stone-600">Total Obra:</span>
+                          <strong className="text-black">${targetProj.totalAmount.toLocaleString('es-MX')} MXN</strong>
+                        </div>
+                        <div className="flex justify-between text-amber-800 font-semibold">
+                          <span>Nuevo Anticipo ({customAdvancePercent}%):</span>
+                          <strong>${previewAdvance.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN</strong>
+                        </div>
+                        <div className="flex justify-between text-blue-800 font-semibold">
+                          <span>Nuevo Finiquito ({100 - customAdvancePercent}%):</span>
+                          <strong>${previewBalance.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN</strong>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-stone-200">
+                  <button
+                    type="button"
+                    onClick={() => setEditingSchemeProjectId(null)}
+                    className="px-3 py-1.5 bg-stone-100 text-stone-700 text-xs font-bold rounded-lg cursor-pointer hover:bg-stone-200"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (editingSchemeProjectId) {
+                        updateProjectPaymentScheme(editingSchemeProjectId, customAdvancePercent);
+                        setEditingSchemeProjectId(null);
+                      }
+                    }}
+                    className="px-4 py-1.5 bg-black text-white text-xs font-bold rounded-lg cursor-pointer hover:bg-neutral-800"
+                  >
+                    Guardar Esquema
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -28,7 +28,9 @@ import {
   ShoppingCart,
   CreditCard,
   ArrowDownUp,
-  Headphones
+  Headphones,
+  TrendingUp,
+  Truck
 } from 'lucide-react';
 
 export interface NavItem {
@@ -73,6 +75,8 @@ export const ROLE_MODULES: Record<RoleType, NavItem[]> = {
   ],
   operaciones: [
     { id: 'ordenes', label: 'Órdenes de Trabajo (OT)', icon: <ClipboardList className="w-5 h-5" /> },
+    { id: 'avance_diario', label: 'Avance Diario Cuadrillas', icon: <TrendingUp className="w-5 h-5" /> },
+    { id: 'vehiculos', label: 'Control Vehicular & Flotilla', icon: <Truck className="w-5 h-5" /> },
     { id: 'almacen_movimientos', label: 'Ingresos y Egresos Almacén', icon: <ArrowDownUp className="w-5 h-5" /> },
     { id: 'inventario', label: 'Control de Inventarios', icon: <Boxes className="w-5 h-5" /> },
     { id: 'campo', label: 'Bitácora & Firmas de Campo', icon: <Camera className="w-5 h-5" /> }
