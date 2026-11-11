@@ -19,7 +19,8 @@ import {
   CustomerServiceTicket,
   DailyWorkLog,
   VehicleLog,
-  Supplier
+  Supplier,
+  ROLE_DEFAULT_MODULE
 } from '../types';
 import {
   INITIAL_REQUESTS,
@@ -426,6 +427,8 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setActiveRoleState(role);
     if (role) {
       localStorage.setItem(STORAGE_KEYS.ACTIVE_ROLE, role);
+      const defaultMod = ROLE_DEFAULT_MODULE[role] || 'inicio';
+      setCurrentModule(defaultMod);
     } else {
       localStorage.removeItem(STORAGE_KEYS.ACTIVE_ROLE);
     }

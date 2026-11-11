@@ -192,6 +192,44 @@ async function startServer() {
       },
       appType: 'spa',
     });
+    // Neutralizar llamadas de WebSocket en @vite/client para evitar "WebSocket closed without opened" en el iframe
+    app.use((req, res, next) => {
+      if (req.url && req.url.startsWith('/@vite/client')) {
+        const originalWrite = res.write.bind(res);
+        const originalEnd = res.end.bind(res);
+        const chunks: Buffer[] = [];
+
+        res.write = function (chunk: any, ...args: any[]) {
+          if (chunk) {
+            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+          }
+          return true;
+        } as any;
+
+        res.end = function (chunk?: any, ...args: any[]) {
+          if (chunk) {
+            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+          }
+          let body = Buffer.concat(chunks).toString('utf8');
+
+          body = body.replace(
+            /const createWebSocketModuleRunnerTransport\s*=\s*\([^)]*\)\s*=>\s*\{/,
+            'const createWebSocketModuleRunnerTransport = () => ({ connect: async (handlers) => { try { if (handlers && typeof handlers.onMessage === "function") handlers.onMessage({ type: "connected" }); } catch (e) {} }, disconnect: async () => {}, send: (data) => {}, ping: async () => {}, close: () => {}, addEventListener: () => {}, removeEventListener: () => {}, readyState: 1 }); const _origTransport = (options) => {'
+          );
+
+          body = body.replace(
+            /reject\(\s*\/\* @__PURE__ \*\/ new Error\("WebSocket closed without opened\."\)\);/g,
+            'resolve();'
+          );
+
+          res.removeHeader('Content-Length');
+          res.setHeader('Content-Length', Buffer.byteLength(body, 'utf8'));
+          return originalEnd(body, 'utf8');
+        } as any;
+      }
+      next();
+    });
+
     app.use(vite.middlewares);
   }
 

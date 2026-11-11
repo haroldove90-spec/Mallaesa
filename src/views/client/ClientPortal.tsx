@@ -227,12 +227,89 @@ export const ClientPortal: React.FC<{
     alert('¡Cotización aprobada con éxito! El área administrativa registrará tu anticipo para iniciar la fabricación y logística de instalación.');
   };
 
+  const validModules = ['cotizador', 'catalogo', 'estatus'];
+  const resolvedTab = validModules.includes(activeModule) ? activeModule : 'cotizador';
+
   return (
     <div className="space-y-6">
+      {/* TARJETAS DE MÉTRICAS & SERVICIO AL CLIENTE */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Cotizaciones en Sistema</span>
+            <FileText className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">
+            {projects.length + formalQuotes.length}
+          </div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+            Presupuestos calculados
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Metros Instalados</span>
+            <CheckCircle2 className="w-4 h-4 text-blue-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">+45,000 <span className="text-xs font-normal text-stone-500">m</span></div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+            Experiencia comprobada
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Póliza de Garantía</span>
+            <ShieldCheck className="w-4 h-4 text-purple-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">3 Años</div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+            100% materiales y mano de obra
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Atención Telefónica</span>
+            <Phone className="w-4 h-4 text-amber-600" />
+          </div>
+          <div className="text-base sm:text-lg font-black text-black">(81) 3406-0349</div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+            Lunes a Sábado 8am - 7pm
+          </div>
+        </div>
+      </div>
+
+      {/* Pestañas de navegación rápida en Portal de Clientes */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-stone-200">
+        {[
+          { id: 'cotizador', label: '1. Cotizador Inteligente & Catálogo', icon: <Calculator className="w-4 h-4" /> },
+          { id: 'catalogo', label: '2. Catálogo Oficial de Acero', icon: <Grid className="w-4 h-4" /> },
+          { id: 'estatus', label: '3. Estatus de Proyecto & Garantía', icon: <Search className="w-4 h-4" /> }
+        ].map((tab) => {
+          const isActive = resolvedTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onNavigateModule?.(tab.id)}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+                isActive
+                  ? 'bg-black text-white shadow-sm'
+                  : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100 hover:text-black'
+              }`}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* ========================================================
           MÓDULO 1: COTIZADOR (8 CATEGORÍAS OFICIALES O PARAMÉTRICO)
          ======================================================== */}
-      {(activeModule === 'cotizador' || activeModule === 'cuestionario') && (
+      {(resolvedTab === 'cotizador' || resolvedTab === 'cuestionario') && (
         <div className="space-y-6">
           {/* Selector de Modo de Cotización */}
           <div className="bg-white border border-stone-200 rounded-2xl p-3 flex items-center justify-between gap-3 flex-wrap shadow-xs">
@@ -773,7 +850,7 @@ export const ClientPortal: React.FC<{
       {/* ========================================================
           MÓDULO 2: ESTATUS DE SU PROYECTO
          ======================================================== */}
-      {activeModule === 'estatus' && (
+      {resolvedTab === 'estatus' && (
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="bg-white border border-stone-200 rounded-xl p-6 shadow-xs">
             <h2 className="text-xl font-bold text-black">
@@ -998,7 +1075,7 @@ export const ClientPortal: React.FC<{
       {/* ========================================================
           MÓDULO 3: CATÁLOGO OFICIAL POR CATEGORÍAS (PDF OFICIAL)
          ======================================================== */}
-      {activeModule === 'catalogo' && (
+      {resolvedTab === 'catalogo' && (
         <OfficialCatalogView
           onGoToQuote={() => {
             if (onNavigateModule) onNavigateModule('cotizador');

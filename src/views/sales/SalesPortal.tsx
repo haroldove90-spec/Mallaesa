@@ -39,8 +39,15 @@ export const SalesPortal: React.FC<{
     createFormalQuote,
     sendQuoteToClient,
     requestDiscountApproval,
-    projects
+    projects,
+    customerServiceTickets
   } = useMallaesa();
+
+  const validModules = ['solicitudes', 'cotizador', 'catalogo', 'historial', 'crm', 'atencion_clientes'];
+  const resolvedTab = validModules.includes(activeModule) ? activeModule : 'solicitudes';
+
+  const pipelineTotal = formalQuotes.reduce((acc, q) => acc + (q.total || 0), 0);
+  const approvedQuotesCount = formalQuotes.filter(q => q.status === 'aprobada').length;
 
   // Selected request for quotation generator
   const [selectedRequestId, setSelectedRequestId] = useState<string>(
@@ -207,10 +214,109 @@ export const SalesPortal: React.FC<{
 
   return (
     <div className="space-y-6">
+      {/* TARJETAS DE MÉTRICAS COMERCIALES (KPIS DE VENTAS) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Leads / Solicitudes</span>
+            <Inbox className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">{requests.length}</div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+            Cuestionarios web
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Cotizaciones</span>
+            <FileText className="w-4 h-4 text-blue-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">{formalQuotes.length}</div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+            Presupuestos emitidos
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Proyectos Ganados</span>
+            <CheckCircle2 className="w-4 h-4 text-purple-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">{approvedQuotesCount}</div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+            Aprobados por cliente
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Pipeline Cotizado</span>
+            <Calculator className="w-4 h-4 text-amber-600" />
+          </div>
+          <div className="text-lg sm:text-xl font-black text-black truncate">
+            ${(pipelineTotal / 1000).toFixed(1)}k <span className="text-xs font-normal text-stone-500">MXN</span>
+          </div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+            Volumen comercial
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">CRM Proyectos</span>
+            <Kanban className="w-4 h-4 text-cyan-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">{projects.length}</div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+            En seguimiento activo
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Atención a Clientes</span>
+            <Phone className="w-4 h-4 text-stone-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">{customerServiceTickets?.length || 0}</div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+            Tickets de soporte
+          </div>
+        </div>
+      </div>
+
+      {/* Barra de Pestañas Rápidas de Ventas */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-stone-200">
+        {[
+          { id: 'solicitudes', label: `1. Solicitudes Web (${requests.length})`, icon: <Inbox className="w-4 h-4" /> },
+          { id: 'cotizador', label: '2. Cotizador Inteligente', icon: <Calculator className="w-4 h-4 text-blue-600" /> },
+          { id: 'catalogo', label: '3. Catálogo Oficial', icon: <Grid className="w-4 h-4" /> },
+          { id: 'crm', label: '4. CRM Prospectos', icon: <Kanban className="w-4 h-4 text-purple-600" /> },
+          { id: 'atencion_clientes', label: '5. Atención a Clientes', icon: <Phone className="w-4 h-4 text-amber-600" /> },
+          { id: 'historial', label: `6. Historial (${formalQuotes.length})`, icon: <FileText className="w-4 h-4" /> }
+        ].map((tab) => {
+          const isActive = resolvedTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onNavigateModule?.(tab.id)}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+                isActive
+                  ? 'bg-black text-white shadow-sm'
+                  : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100 hover:text-black'
+              }`}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* ========================================================
           MÓDULO 1: BANDEJA DE ENTRADA DE SOLICITUDES
          ======================================================== */}
-      {activeModule === 'solicitudes' && (
+      {resolvedTab === 'solicitudes' && (
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="bg-white border border-stone-200 rounded-xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -352,7 +458,7 @@ export const SalesPortal: React.FC<{
       {/* ========================================================
           MÓDULO 2: COTIZADOR (8 CATEGORÍAS OFICIALES O LEADS)
          ======================================================== */}
-      {activeModule === 'cotizador' && (
+      {resolvedTab === 'cotizador' && (
         <div className="space-y-6">
           {/* Selector de Modo de Cotización para Ventas */}
           <div className="bg-white border border-stone-200 rounded-2xl p-3 flex items-center justify-between gap-3 flex-wrap shadow-xs">
@@ -635,7 +741,7 @@ export const SalesPortal: React.FC<{
       {/* ========================================================
           MÓDULO: CATÁLOGO OFICIAL POR CATEGORÍAS (LISTA DE PRECIOS)
          ======================================================== */}
-      {activeModule === 'catalogo' && (
+      {resolvedTab === 'catalogo' && (
         <OfficialCatalogView
           onGoToQuote={() => {
             if (onNavigateModule) onNavigateModule('cotizador');
@@ -647,7 +753,7 @@ export const SalesPortal: React.FC<{
       {/* ========================================================
           MÓDULO: HISTORIAL DE COTIZACIONES
          ======================================================== */}
-      {activeModule === 'historial' && (
+      {resolvedTab === 'historial' && (
         <QuoteHistoryView
           onGoToQuote={() => {
             if (onNavigateModule) onNavigateModule('cotizador');
@@ -659,7 +765,7 @@ export const SalesPortal: React.FC<{
       {/* ========================================================
           MÓDULO 3: GESTIÓN DE PROSPECTOS (CRM PIPELINE)
          ======================================================== */}
-      {activeModule === 'crm' && (
+      {resolvedTab === 'crm' && (
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="bg-white border border-stone-200 rounded-xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -755,7 +861,7 @@ export const SalesPortal: React.FC<{
       {/* ========================================================
           MÓDULO: ATENCIÓN A CLIENTES & GARANTÍAS
          ======================================================== */}
-      {activeModule === 'atencion_clientes' && (
+      {resolvedTab === 'atencion_clientes' && (
         <CustomerServiceView />
       )}
     </div>

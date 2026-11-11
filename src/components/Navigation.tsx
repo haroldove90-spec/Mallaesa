@@ -103,6 +103,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentModule, onSelectM
   if (!activeRole) return null;
 
   const modules = ROLE_MODULES[activeRole] || [];
+  const validModuleIds = modules.map(m => m.id);
+  const activeItemId = validModuleIds.includes(currentModule)
+    ? currentModule
+    : (modules[0]?.id || currentModule);
+
   const pendingApprovalsCount = approvals.filter(a => a.status === 'pendiente').length;
   const newRequestsCount = requests.filter(r => r.status === 'nuevo').length;
 
@@ -127,7 +132,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentModule, onSelectM
         {/* Lista de Módulos */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {modules.map((item) => {
-            const isActive = currentModule === item.id;
+            const isActive = activeItemId === item.id;
             const hasBadge =
               (item.id === 'aprobaciones' && pendingApprovalsCount > 0) ||
               (item.id === 'solicitudes' && newRequestsCount > 0);
@@ -185,7 +190,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentModule, onSelectM
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 shadow-lg">
         <div className="flex items-center justify-around h-16 px-1 safe-area-pb">
           {modules.map((item) => {
-            const isActive = currentModule === item.id;
+            const isActive = activeItemId === item.id;
             const hasBadge =
               (item.id === 'aprobaciones' && pendingApprovalsCount > 0) ||
               (item.id === 'solicitudes' && newRequestsCount > 0);

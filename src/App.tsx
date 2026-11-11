@@ -16,27 +16,23 @@ import { QuoteHistoryView } from './components/QuoteHistoryView';
 import { MallaesaChatbotWidget } from './components/MallaesaChatbotWidget';
 import { NotificationToast } from './components/NotificationToast';
 
+import { ROLE_DEFAULT_MODULE } from './types';
+import { ROLE_MODULES } from './components/Navigation';
+
 function DashboardContent() {
   const { activeRole, currentModule, setCurrentModule } = useMallaesa();
   const [showSplash, setShowSplash] = useState(true);
 
-  // When role changes, set default module if not already set
+  // Synchronize currentModule whenever activeRole changes or if currentModule is not valid for this role
   useEffect(() => {
     if (activeRole) {
-      const defaultModules: Record<string, string> = {
-        pagina_web: 'inicio',
-        cotizador: 'cotizador',
-        cliente: 'cotizador',
-        director: 'kpis',
-        ventas: 'solicitudes',
-        operaciones: 'ordenes',
-        administracion: 'cuentas'
-      };
-      if (!currentModule || currentModule === 'inicio') {
-        setCurrentModule(defaultModules[activeRole] || 'inicio');
+      const allowedModules = ROLE_MODULES[activeRole]?.map(m => m.id) || [];
+      if (!currentModule || !allowedModules.includes(currentModule)) {
+        const defaultMod = ROLE_DEFAULT_MODULE[activeRole] || 'inicio';
+        setCurrentModule(defaultMod);
       }
     }
-  }, [activeRole]);
+  }, [activeRole, currentModule]);
 
   return (
     <>
@@ -72,7 +68,7 @@ function DashboardContent() {
             <main className="flex-1 p-3.5 sm:p-6 md:p-8 overflow-y-auto">
               {activeRole === 'cotizador' && (
                 <>
-                  {currentModule === 'cotizador' && (
+                  {(currentModule === 'cotizador' || !['catalogo', 'historial'].includes(currentModule)) && (
                     <OfficialQuoteCalculatorView
                       onGoToHistory={() => setCurrentModule('historial')}
                     />

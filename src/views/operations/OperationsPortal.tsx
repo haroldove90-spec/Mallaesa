@@ -39,8 +39,17 @@ export const OperationsPortal: React.FC<{
     createWorkOrder,
     updateWorkOrderStatus,
     submitFieldSignatureAndPhotos,
-    adjustInventoryStock
+    adjustInventoryStock,
+    dailyWorkLogs,
+    vehicleLogs
   } = useMallaesa();
+
+  const validTabs = ['ordenes', 'avance_diario', 'vehiculos', 'almacen_movimientos', 'inventario', 'campo'];
+  const resolvedTab = validTabs.includes(activeModule) ? activeModule : 'ordenes';
+
+  const totalMetersInProcess = workOrders.reduce((sum, ot) => {
+    return sum + (ot.linearMeters || 0);
+  }, 0);
 
   // Create OT modal states
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
@@ -156,6 +165,77 @@ export const OperationsPortal: React.FC<{
 
   return (
     <div className="space-y-6">
+      {/* TARJETAS DE MÉTRICAS OPERATIVAS EN CAMPO (KPIS) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Órdenes de Trabajo</span>
+            <ClipboardList className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">{workOrders.length}</div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+            {workOrders.filter(w => w.status !== 'completada').length} activas en campo
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Metros en Campo</span>
+            <CheckCircle2 className="w-4 h-4 text-blue-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">
+            {totalMetersInProcess.toLocaleString()} <span className="text-xs font-normal text-stone-500">m</span>
+          </div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+            Programados en obra
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Cuadrillas Activas</span>
+            <UserCheck className="w-4 h-4 text-purple-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">{crews.length}</div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+            Equipos especializados
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Avances Firmados</span>
+            <TrendingUp className="w-4 h-4 text-amber-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">{dailyWorkLogs?.length || 0}</div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+            Bitácoras de avance
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Flotilla & Vehículos</span>
+            <Truck className="w-4 h-4 text-cyan-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">{vehicleLogs?.length || 0}</div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+            Checklists de salida/llegada
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Almacén & Stock</span>
+            <Boxes className="w-4 h-4 text-stone-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">{inventory.length}</div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+            Materiales controlados
+          </div>
+        </div>
+      </div>
+
       {/* Barra de Pestañas Rápidas Operativas */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-stone-200">
         {[
@@ -166,7 +246,7 @@ export const OperationsPortal: React.FC<{
           { id: 'inventario', label: '5. Inventario & Stock', icon: <Boxes className="w-4 h-4" /> },
           { id: 'campo', label: '6. Entrega Final Obra (Firma Cliente)', icon: <Camera className="w-4 h-4" /> }
         ].map((tab) => {
-          const isActive = activeModule === tab.id;
+          const isActive = resolvedTab === tab.id;
           return (
             <button
               key={tab.id}
@@ -187,7 +267,7 @@ export const OperationsPortal: React.FC<{
       {/* ========================================================
           MÓDULO 1: ÓRDENES DE TRABAJO (OT)
          ======================================================== */}
-      {activeModule === 'ordenes' && (
+      {resolvedTab === 'ordenes' && (
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="bg-white border border-stone-200 rounded-xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -374,7 +454,7 @@ export const OperationsPortal: React.FC<{
       {/* ========================================================
           MÓDULO 2: CONTROL DE INVENTARIOS & ALERTA DE STOCK
          ======================================================== */}
-      {activeModule === 'inventario' && (
+      {resolvedTab === 'inventario' && (
         <div className="max-w-6xl mx-auto space-y-6">
           <div className="bg-white border border-stone-200 rounded-xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -455,7 +535,7 @@ export const OperationsPortal: React.FC<{
       {/* ========================================================
           MÓDULO 3: BITÁCORA EN CAMPO & FIRMA DE CONFORMIDAD
          ======================================================== */}
-      {activeModule === 'campo' && (
+      {resolvedTab === 'campo' && (
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="bg-white border border-stone-200 rounded-xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -656,21 +736,21 @@ export const OperationsPortal: React.FC<{
       {/* ========================================================
           MÓDULO: ALMACÉN - SOLICITUDES DE INGRESO Y EGRESO
          ======================================================== */}
-      {activeModule === 'almacen_movimientos' && (
+      {resolvedTab === 'almacen_movimientos' && (
         <WarehouseMovementsView />
       )}
 
       {/* ========================================================
           MÓDULO: AVANCE DIARIO DE CUADRILLA & BITÁCORA (PUNTO 8)
          ======================================================== */}
-      {activeModule === 'avance_diario' && (
+      {resolvedTab === 'avance_diario' && (
         <DailyWorkLogsView />
       )}
 
       {/* ========================================================
           MÓDULO: CONTROL VEHICULAR & FLOTILLA (PUNTO 12)
          ======================================================== */}
-      {activeModule === 'vehiculos' && (
+      {resolvedTab === 'vehiculos' && (
         <VehicleChecklistView />
       )}
     </div>

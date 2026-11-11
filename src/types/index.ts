@@ -388,5 +388,12 @@ export interface VehicleLog {
   notes?: string;
   createdAt: string;
 }
-
-
+export const ROLE_DEFAULT_MODULE: Record<RoleType, string> = {
+  pagina_web: 'inicio',
+  cotizador: 'cotizador',
+  cliente: 'cotizador',
+  director: 'kpis',
+  ventas: 'solicitudes',
+  operaciones: 'ordenes',
+  administracion: 'cuentas'
+};

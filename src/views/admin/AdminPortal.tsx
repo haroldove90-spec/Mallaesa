@@ -34,8 +34,14 @@ export const AdminPortal: React.FC<{
     registerAdvancePayment,
     registerFinalPayment,
     approvals,
-    updateProjectPaymentScheme
+    updateProjectPaymentScheme,
+    accountsPayable,
+    suppliers,
+    simpleReceipts
   } = useMallaesa();
+
+  const validModules = ['cuentas', 'cuentas_pagar', 'proveedores', 'recibos', 'facturas', 'gastos'];
+  const resolvedTab = validModules.includes(activeModule) ? activeModule : 'cuentas';
 
   // Modal / Inputs for Advance Payment
   const [selectedProjectIdForAdvance, setSelectedProjectIdForAdvance] = useState<string>('');
@@ -62,6 +68,11 @@ export const AdminPortal: React.FC<{
   const projectsWaitingBalance = projects.filter(
     p => p.advancePaid && !p.balancePaid
   );
+
+  const totalAdvancePending = projectsWaitingAdvance.reduce((sum, p) => sum + (p.advanceAmount || (p.totalAmount * 0.5)), 0);
+  const totalBalancePending = projectsWaitingBalance.reduce((sum, p) => sum + (p.balanceAmount || (p.totalAmount * 0.5)), 0);
+  const totalInvoiced = invoices.filter(i => i.status === 'timbrada').reduce((sum, i) => sum + (i.total || 0), 0);
+  const totalCxP = accountsPayable?.reduce((sum, a) => sum + (a.status !== 'pagado' ? a.balance : 0), 0) || 0;
 
   const handleRegisterAdvance = (projectId: string) => {
     const proj = projects.find(p => p.id === projectId);
@@ -100,6 +111,75 @@ export const AdminPortal: React.FC<{
 
   return (
     <div className="space-y-6">
+      {/* TARJETAS DE MÉTRICAS FINANCIERAS & ADMINISTRATIVAS (KPIS) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Por Cobrar Anticipo</span>
+            <Receipt className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">{projectsWaitingAdvance.length}</div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5 truncate">
+            ${(totalAdvancePending / 1000).toFixed(1)}k MXN
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Por Cobrar Finiquito</span>
+            <DollarSign className="w-4 h-4 text-blue-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">{projectsWaitingBalance.length}</div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5 truncate">
+            ${(totalBalancePending / 1000).toFixed(1)}k MXN
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Facturación CFDI</span>
+            <FileCheck2 className="w-4 h-4 text-purple-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">{invoices.length}</div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5 truncate">
+            ${(totalInvoiced / 1000).toFixed(1)}k timbrado
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Cuentas por Pagar</span>
+            <CreditCard className="w-4 h-4 text-amber-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">{accountsPayable?.length || 0}</div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5 truncate">
+            ${(totalCxP / 1000).toFixed(1)}k saldo
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Proveedores</span>
+            <Building2 className="w-4 h-4 text-cyan-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">{suppliers?.length || 0}</div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+            Líneas de crédito
+          </div>
+        </div>
+
+        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between text-stone-500 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Recibos Simples</span>
+            <FileText className="w-4 h-4 text-stone-600" />
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-black">{simpleReceipts?.length || 0}</div>
+          <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+            Pagos no fiscales
+          </div>
+        </div>
+      </div>
+
       {/* Barra de Pestañas Rápidas Administrativas */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-stone-200">
         {[
@@ -110,7 +190,7 @@ export const AdminPortal: React.FC<{
           { id: 'facturas', label: '5. Facturación CFDI 4.0', icon: <FileCheck2 className="w-4 h-4" /> },
           { id: 'gastos', label: '6. Nómina & Gastos', icon: <Wallet className="w-4 h-4" /> }
         ].map((tab) => {
-          const isActive = activeModule === tab.id;
+          const isActive = resolvedTab === tab.id;
           return (
             <button
               key={tab.id}
@@ -131,7 +211,7 @@ export const AdminPortal: React.FC<{
       {/* ========================================================
           MÓDULO 1: CUENTAS POR COBRAR (ANTICIPOS Y SALDOS)
          ======================================================== */}
-      {activeModule === 'cuentas' && (
+      {resolvedTab === 'cuentas' && (
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="bg-white border border-stone-200 rounded-xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -413,7 +493,7 @@ export const AdminPortal: React.FC<{
       {/* ========================================================
           MÓDULO 2: FACTURACIÓN CFDI 4.0
          ======================================================== */}
-      {activeModule === 'facturas' && (
+      {resolvedTab === 'facturas' && (
         <div className="max-w-6xl mx-auto space-y-6">
           <div className="bg-white border border-stone-200 rounded-xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -547,7 +627,7 @@ export const AdminPortal: React.FC<{
       {/* ========================================================
           MÓDULO 3: NÓMINA Y GASTOS OPERATIVOS
          ======================================================== */}
-      {activeModule === 'gastos' && (
+      {resolvedTab === 'gastos' && (
         <div className="max-w-5xl mx-auto space-y-6">
           <div className="bg-white border border-stone-200 rounded-xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -596,21 +676,21 @@ export const AdminPortal: React.FC<{
       {/* ========================================================
           MÓDULO: CATÁLOGO Y GESTIÓN DE PROVEEDORES
          ======================================================== */}
-      {activeModule === 'proveedores' && (
+      {resolvedTab === 'proveedores' && (
         <SuppliersView onNavigateModule={onNavigateModule} />
       )}
 
       {/* ========================================================
           MÓDULO 4: CUENTAS POR PAGAR (CxP)
          ======================================================== */}
-      {activeModule === 'cuentas_pagar' && (
+      {resolvedTab === 'cuentas_pagar' && (
         <AccountsPayableView />
       )}
 
       {/* ========================================================
           MÓDULO 5: RECIBOS SIMPLES (SIN FACTURA)
          ======================================================== */}
-      {activeModule === 'recibos' && (
+      {resolvedTab === 'recibos' && (
         <SimpleReceiptsView />
       )}
     </div>

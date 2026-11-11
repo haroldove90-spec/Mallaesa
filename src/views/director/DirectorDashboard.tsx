@@ -78,12 +78,42 @@ export const DirectorDashboard: React.FC<{
     setDirectorNotesInput('');
   };
 
+  const validModules = ['kpis', 'aprobaciones', 'financiero', 'historial', 'ordenes_compra'];
+  const resolvedTab = validModules.includes(activeModule) ? activeModule : 'kpis';
+
   return (
     <div className="space-y-6">
+      {/* Barra de Pestañas Rápidas de Dirección */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-stone-200">
+        {[
+          { id: 'kpis', label: '1. Supervisión Ejecutiva & KPIs', icon: <TrendingUp className="w-4 h-4 text-emerald-600" /> },
+          { id: 'aprobaciones', label: `2. Aprobaciones (${pendingApprovals.length})`, icon: <CheckCircle2 className="w-4 h-4 text-amber-600" /> },
+          { id: 'ordenes_compra', label: '3. Órdenes de Compra (OC)', icon: <Building2 className="w-4 h-4 text-blue-600" /> },
+          { id: 'financiero', label: '4. Reportes Financieros', icon: <DollarSign className="w-4 h-4 text-purple-600" /> },
+          { id: 'historial', label: `5. Historial (${formalQuotes.length})`, icon: <Clock className="w-4 h-4" /> }
+        ].map((tab) => {
+          const isActive = resolvedTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onNavigateModule?.(tab.id)}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+                isActive
+                  ? 'bg-black text-white shadow-sm'
+                  : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100 hover:text-black'
+              }`}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* ========================================================
           MÓDULO 1: DASHBOARD EJECUTIVO (KPIS)
          ======================================================== */}
-      {activeModule === 'kpis' && (
+      {resolvedTab === 'kpis' && (
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Bienvenida Ejecutiva */}
           <div className="bg-white border border-stone-200 rounded-xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -372,7 +402,7 @@ export const DirectorDashboard: React.FC<{
       {/* ========================================================
           MÓDULO 2: APROBACIONES CLAVE
          ======================================================== */}
-      {activeModule === 'aprobaciones' && (
+      {resolvedTab === 'aprobaciones' && (
         <div className="max-w-5xl mx-auto space-y-6">
           <div className="bg-white border border-stone-200 rounded-xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -526,7 +556,7 @@ export const DirectorDashboard: React.FC<{
       {/* ========================================================
           MÓDULO 3: REPORTES FINANCIEROS
          ======================================================== */}
-      {activeModule === 'financiero' && (
+      {resolvedTab === 'financiero' && (
         <div className="max-w-5xl mx-auto space-y-6">
           <div className="bg-white border border-stone-200 rounded-xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -604,12 +634,12 @@ export const DirectorDashboard: React.FC<{
       )}
 
       {/* MÓDULO: HISTORIAL DE COTIZACIONES OFICIALES */}
-      {activeModule === 'historial' && (
+      {resolvedTab === 'historial' && (
         <QuoteHistoryView />
       )}
 
       {/* MÓDULO: ÓRDENES DE COMPRA (OC) */}
-      {activeModule === 'ordenes_compra' && (
+      {resolvedTab === 'ordenes_compra' && (
         <PurchaseOrdersView />
       )}
     </div>
