@@ -183,7 +183,7 @@ async function startServer() {
       res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
     });
   } else {
-    const isHmrDisabled = process.env.DISABLE_HMR === 'true';
+    const isHmrDisabled = process.env.ENABLE_HMR === 'true' ? false : true;
     const vite = await createViteServer({
       server: {
         middlewareMode: true,

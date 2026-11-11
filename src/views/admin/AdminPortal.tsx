@@ -13,6 +13,7 @@ import {
   DollarSign,
   AlertCircle,
   Building,
+  Building2,
   User,
   CreditCard,
   Download,
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react';
 import { AccountsPayableView } from '../../components/AccountsPayableView';
 import { SimpleReceiptsView } from '../../components/SimpleReceiptsView';
+import { SuppliersView } from '../../components/SuppliersView';
 
 export const AdminPortal: React.FC<{
   activeModule: string;
@@ -98,6 +100,34 @@ export const AdminPortal: React.FC<{
 
   return (
     <div className="space-y-6">
+      {/* Barra de Pestañas Rápidas Administrativas */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-stone-200">
+        {[
+          { id: 'cuentas', label: '1. Cuentas por Cobrar (CxC)', icon: <Receipt className="w-4 h-4 text-emerald-600" /> },
+          { id: 'cuentas_pagar', label: '2. Cuentas por Pagar (CxP)', icon: <CreditCard className="w-4 h-4 text-blue-600" /> },
+          { id: 'proveedores', label: '3. Proveedores & Crédito', icon: <Building2 className="w-4 h-4 text-purple-600" /> },
+          { id: 'recibos', label: '4. Recibos Simples (Sin Factura)', icon: <FileText className="w-4 h-4" /> },
+          { id: 'facturas', label: '5. Facturación CFDI 4.0', icon: <FileCheck2 className="w-4 h-4" /> },
+          { id: 'gastos', label: '6. Nómina & Gastos', icon: <Wallet className="w-4 h-4" /> }
+        ].map((tab) => {
+          const isActive = activeModule === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onNavigateModule?.(tab.id)}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+                isActive
+                  ? 'bg-black text-white shadow-sm'
+                  : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100 hover:text-black'
+              }`}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* ========================================================
           MÓDULO 1: CUENTAS POR COBRAR (ANTICIPOS Y SALDOS)
          ======================================================== */}
@@ -561,6 +591,13 @@ export const AdminPortal: React.FC<{
             ))}
           </div>
         </div>
+      )}
+
+      {/* ========================================================
+          MÓDULO: CATÁLOGO Y GESTIÓN DE PROVEEDORES
+         ======================================================== */}
+      {activeModule === 'proveedores' && (
+        <SuppliersView onNavigateModule={onNavigateModule} />
       )}
 
       {/* ========================================================

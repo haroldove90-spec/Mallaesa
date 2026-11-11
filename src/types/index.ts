@@ -254,6 +254,31 @@ export interface AccountsPayableItem {
   notes?: string;
 }
 
+export interface Supplier {
+  id: string;
+  code: string;
+  businessName: string;
+  commercialName: string;
+  rfc: string;
+  category: 'acero_mallas' | 'tuberia_postes' | 'cemento_agregados' | 'ferreteria_accesorios' | 'fletes_logistica' | 'seguridad_herramientas' | 'servicios';
+  contactName: string;
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  state: string;
+  creditDays: number;
+  creditLimit: number;
+  currentBalance: number;
+  bankName?: string;
+  bankAccount?: string;
+  bankClabe?: string;
+  status: 'activo' | 'inactivo' | 'bloqueado';
+  rating?: number;
+  notes?: string;
+  createdAt: string;
+}
+
 export interface SimpleReceipt {
   id: string;
   folio: string;

@@ -26,7 +26,8 @@ export const PurchaseOrdersView: React.FC = () => {
     createPurchaseOrder,
     updatePurchaseOrderStatus,
     receivePurchaseOrderIntoWarehouse,
-    inventory
+    inventory,
+    suppliers
   } = useMallaesa();
 
   const [filterStatus, setFilterStatus] = useState<string>('todos');
@@ -382,14 +383,32 @@ export const PurchaseOrdersView: React.FC = () => {
             <form onSubmit={handleCreatePO} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-stone-700 mb-1">Proveedor:</label>
+                  <label className="block font-bold text-stone-700 mb-1">Proveedor (Catálogo Oficial):</label>
                   <input
                     type="text"
+                    list="po-suppliers-list"
                     value={provider}
-                    onChange={e => setProvider(e.target.value)}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setProvider(val);
+                      const found = suppliers.find(s => s.commercialName.toLowerCase() === val.toLowerCase() || s.businessName.toLowerCase() === val.toLowerCase());
+                      if (found) {
+                        setRfc(found.rfc);
+                        setContactName(found.contactName);
+                        setContactPhone(found.phone);
+                      }
+                    }}
+                    placeholder="Selecciona o escribe proveedor..."
                     required
                     className="w-full p-2 bg-stone-50 border border-stone-300 rounded-lg font-semibold"
                   />
+                  <datalist id="po-suppliers-list">
+                    {suppliers.map(s => (
+                      <option key={s.id} value={s.commercialName}>
+                        {s.businessName} - RFC: {s.rfc}
+                      </option>
+                    ))}
+                  </datalist>
                 </div>
                 <div>
                   <label className="block font-bold text-stone-700 mb-1">RFC del Proveedor:</label>

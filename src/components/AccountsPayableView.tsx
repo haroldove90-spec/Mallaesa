@@ -20,6 +20,7 @@ import {
 export const AccountsPayableView: React.FC = () => {
   const {
     accountsPayable,
+    suppliers,
     createAccountsPayable,
     registerAccountsPayablePayment
   } = useMallaesa();
@@ -375,12 +376,20 @@ export const AccountsPayableView: React.FC = () => {
                 <label className="block font-bold text-stone-700 mb-1">Proveedor / Beneficiario:</label>
                 <input
                   type="text"
-                  placeholder="Ej. Deacero Planta Guadalupe"
+                  list="registered-suppliers"
+                  placeholder="Ej. Deacero México"
                   value={provider}
                   onChange={e => setProvider(e.target.value)}
                   required
                   className="w-full p-2 bg-stone-50 border border-stone-300 rounded-lg"
                 />
+                <datalist id="registered-suppliers">
+                  {suppliers.map(s => (
+                    <option key={s.id} value={s.commercialName}>
+                      {s.businessName} ({s.code})
+                    </option>
+                  ))}
+                </datalist>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

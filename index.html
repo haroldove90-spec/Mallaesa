@@ -5,73 +5,112 @@
     <script>
       // En entorno de iframe de AI Studio, HMR está inactivo por diseño; interceptar WebSocket de Vite HMR
       (function() {
-        if (typeof window !== 'undefined' && window.WebSocket) {
-          var RealWebSocket = window.WebSocket;
+        if (typeof window !== 'undefined') {
           var MockHmrWebSocket = function(url, protocols) {
-            var isViteHmr = (typeof protocols === 'string' && protocols === 'vite-hmr') ||
-                            (Array.isArray(protocols) && protocols.indexOf('vite-hmr') !== -1) ||
-                            (typeof url === 'string' && (url.indexOf('token=') !== -1 || url.indexOf('24678') !== -1));
+            this.readyState = 1; // WebSocket.OPEN
+            this.OPEN = 1;
+            this.CLOSED = 3;
+            this.CLOSING = 2;
+            this.CONNECTING = 0;
+            this.url = String(url || '');
+            this.protocol = Array.isArray(protocols) ? (protocols[0] || '') : (protocols || '');
+            this.bufferedAmount = 0;
+            this.extensions = '';
+            this.binaryType = 'blob';
 
-            if (isViteHmr) {
-              this.readyState = 1; // OPEN
-              this.OPEN = 1;
-              this.CLOSED = 3;
-              this.CLOSING = 2;
-              this.CONNECTING = 0;
-              this.url = String(url);
-              this.protocol = Array.isArray(protocols) ? (protocols[0] || '') : (protocols || '');
-              this.addEventListener = function(event, cb) {
-                if (event === 'open') setTimeout(cb, 0);
-              };
-              this.removeEventListener = function() {};
-              this.send = function() {};
-              this.close = function() {};
-              return this;
-            }
-            return new RealWebSocket(url, protocols);
+            var self = this;
+            var listeners = {};
+
+            this.addEventListener = function(event, cb) {
+              if (typeof cb !== 'function') return;
+              if (!listeners[event]) listeners[event] = [];
+              listeners[event].push(cb);
+              if (event === 'open') {
+                setTimeout(function() {
+                  try { cb.call(self, { type: 'open', target: self }); } catch (e) {}
+                }, 0);
+              }
+            };
+
+            this.removeEventListener = function(event, cb) {
+              if (!listeners[event]) return;
+              listeners[event] = listeners[event].filter(function(fn) { return fn !== cb; });
+            };
+
+            this.dispatchEvent = function() {
+              return true;
+            };
+
+            this.send = function() {};
+            this.close = function() {};
+
+            setTimeout(function() {
+              if (typeof self.onopen === 'function') {
+                try { self.onopen.call(self, { type: 'open', target: self }); } catch (e) {}
+              }
+            }, 0);
+
+            return this;
           };
 
-          MockHmrWebSocket.prototype = RealWebSocket.prototype;
           MockHmrWebSocket.CONNECTING = 0;
           MockHmrWebSocket.OPEN = 1;
           MockHmrWebSocket.CLOSING = 2;
           MockHmrWebSocket.CLOSED = 3;
+          MockHmrWebSocket.prototype = {
+            CONNECTING: 0,
+            OPEN: 1,
+            CLOSING: 2,
+            CLOSED: 3,
+            addEventListener: function(event, cb) {
+              if (event === 'open' && typeof cb === 'function') {
+                setTimeout(function() { cb({ type: 'open' }); }, 0);
+              }
+            },
+            removeEventListener: function() {},
+            dispatchEvent: function() { return true; },
+            send: function() {},
+            close: function() {}
+          };
+
           window.WebSocket = MockHmrWebSocket;
+
+          var isWsError = function(err) {
+            if (!err) return false;
+            var s = (err && (err.stack || err.message)) ? (err.message + ' ' + err.stack) : String(err);
+            return s.indexOf('WebSocket') !== -1 ||
+                   s.indexOf('closed without opened') !== -1 ||
+                   s.indexOf('@vite/client') !== -1 ||
+                   s.indexOf('vite-hmr') !== -1;
+          };
+
+          var origConsoleError = console.error;
+          console.error = function() {
+            for (var i = 0; i < arguments.length; i++) {
+              var arg = arguments[i];
+              if (isWsError(arg)) return;
+            }
+            origConsoleError.apply(console, arguments);
+          };
+
+          window.addEventListener('error', function(event) {
+            var err = event ? (event.error || event.message) : null;
+            if (isWsError(err)) {
+              event.stopImmediatePropagation();
+              event.preventDefault();
+              return true;
+            }
+          }, true);
+
+          window.addEventListener('unhandledrejection', function(event) {
+            var reason = event ? event.reason : null;
+            if (isWsError(reason)) {
+              event.stopImmediatePropagation();
+              event.preventDefault();
+              return true;
+            }
+          }, true);
         }
-
-        var isWsError = function(str) {
-          if (!str) return false;
-          var s = String(str);
-          return s.indexOf('WebSocket') !== -1 || s.indexOf('@vite/client') !== -1 || s.indexOf('vite-hmr') !== -1;
-        };
-
-        var origConsoleError = console.error;
-        console.error = function() {
-          for (var i = 0; i < arguments.length; i++) {
-            var arg = arguments[i];
-            var msg = (arg && arg.message) ? arg.message : String(arg);
-            if (isWsError(msg)) return;
-          }
-          origConsoleError.apply(console, arguments);
-        };
-
-        window.addEventListener('error', function(event) {
-          var msg = event ? (event.message || (event.error && event.error.message)) : '';
-          if (isWsError(msg)) {
-            event.stopImmediatePropagation();
-            event.preventDefault();
-            return true;
-          }
-        }, true);
-
-        window.addEventListener('unhandledrejection', function(event) {
-          var reason = event ? (event.reason && event.reason.message ? event.reason.message : event.reason) : '';
-          if (isWsError(reason)) {
-            event.stopImmediatePropagation();
-            event.preventDefault();
-            return true;
-          }
-        }, true);
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />

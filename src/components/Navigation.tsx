@@ -30,7 +30,8 @@ import {
   ArrowDownUp,
   Headphones,
   TrendingUp,
-  Truck
+  Truck,
+  Building2
 } from 'lucide-react';
 
 export interface NavItem {
@@ -84,6 +85,7 @@ export const ROLE_MODULES: Record<RoleType, NavItem[]> = {
   administracion: [
     { id: 'cuentas', label: 'Cuentas por Cobrar', icon: <Receipt className="w-5 h-5" /> },
     { id: 'cuentas_pagar', label: 'Cuentas por Pagar (CxP)', icon: <CreditCard className="w-5 h-5" /> },
+    { id: 'proveedores', label: 'Catálogo de Proveedores', icon: <Building2 className="w-5 h-5" /> },
     { id: 'recibos', label: 'Recibos Simples (Sin Factura)', icon: <FileText className="w-5 h-5" /> },
     { id: 'facturas', label: 'Facturación CFDI 4.0', icon: <FileCheck2 className="w-5 h-5" /> },
     { id: 'gastos', label: 'Nómina & Gastos', icon: <Wallet className="w-5 h-5" /> }

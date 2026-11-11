@@ -18,7 +18,8 @@ import {
   WarehouseMovement,
   CustomerServiceTicket,
   DailyWorkLog,
-  VehicleLog
+  VehicleLog,
+  Supplier
 } from '../types';
 import {
   INITIAL_REQUESTS,
@@ -35,7 +36,8 @@ import {
   INITIAL_WAREHOUSE_MOVEMENTS,
   INITIAL_CUSTOMER_SERVICE_TICKETS,
   INITIAL_DAILY_WORK_LOGS,
-  INITIAL_VEHICLE_LOGS
+  INITIAL_VEHICLE_LOGS,
+  INITIAL_SUPPLIERS
 } from '../data/initialData';
 import { PreloadedQuoteDraft } from '../utils/assistantQuoteParser';
 
@@ -172,6 +174,12 @@ interface MallaesaContextType {
 
   // Cuentas por Cobrar: Esquema de Pagos Personalizado (Anticipo / Finiquito %)
   updateProjectPaymentScheme: (projectId: string, advancePercent: number) => void;
+
+  // Catálogo de Proveedores
+  suppliers: Supplier[];
+  addSupplier: (supplier: Omit<Supplier, 'id' | 'createdAt'>) => Supplier;
+  updateSupplier: (id: string, updates: Partial<Supplier>) => void;
+  deleteSupplier: (id: string) => void;
 }
 
 const MallaesaContext = createContext<MallaesaContextType | undefined>(undefined);
@@ -193,7 +201,8 @@ const STORAGE_KEYS = {
   CUSTOMER_SERVICE_TICKETS: 'mallaesa_cs_tickets',
   DAILY_WORK_LOGS: 'mallaesa_daily_work_logs',
   VEHICLE_LOGS: 'mallaesa_vehicle_logs',
-  DIRECTOR_TARGET_MARGIN: 'mallaesa_director_target_margin'
+  DIRECTOR_TARGET_MARGIN: 'mallaesa_director_target_margin',
+  SUPPLIERS: 'mallaesa_suppliers'
 };
 
 export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -330,6 +339,15 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return saved ? JSON.parse(saved) : INITIAL_VEHICLE_LOGS;
   });
 
+  const [suppliers, setSuppliers] = useState<Supplier[]>(() => {
+    if (localStorage.getItem(STORAGE_KEYS.NO_SAMPLE) === 'true') {
+      const saved = localStorage.getItem(STORAGE_KEYS.SUPPLIERS);
+      return saved ? JSON.parse(saved) : [];
+    }
+    const saved = localStorage.getItem(STORAGE_KEYS.SUPPLIERS);
+    return saved ? JSON.parse(saved) : INITIAL_SUPPLIERS;
+  });
+
   const [directorTargetMargin, setDirectorTargetMarginState] = useState<number>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.DIRECTOR_TARGET_MARGIN);
     return saved ? Number(saved) : 36.5;
@@ -400,6 +418,10 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem(STORAGE_KEYS.CUSTOMER_SERVICE_TICKETS, JSON.stringify(customerServiceTickets));
   }, [customerServiceTickets]);
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.SUPPLIERS, JSON.stringify(suppliers));
+  }, [suppliers]);
+
   const setActiveRole = (role: RoleType | null) => {
     setActiveRoleState(role);
     if (role) {
@@ -431,6 +453,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setCustomerServiceTickets([]);
     setDailyWorkLogs([]);
     setVehicleLogs([]);
+    setSuppliers([]);
     localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.QUOTES, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify([]));
@@ -444,6 +467,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem(STORAGE_KEYS.CUSTOMER_SERVICE_TICKETS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.DAILY_WORK_LOGS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.VEHICLE_LOGS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.SUPPLIERS, JSON.stringify([]));
   };
 
   const restoreDemoData = () => {
@@ -463,8 +487,10 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setCustomerServiceTickets(INITIAL_CUSTOMER_SERVICE_TICKETS);
     setDailyWorkLogs(INITIAL_DAILY_WORK_LOGS);
     setVehicleLogs(INITIAL_VEHICLE_LOGS);
+    setSuppliers(INITIAL_SUPPLIERS);
     setDirectorTargetMarginState(36.5);
     localStorage.setItem(STORAGE_KEYS.DIRECTOR_TARGET_MARGIN, '36.5');
+    localStorage.setItem(STORAGE_KEYS.SUPPLIERS, JSON.stringify(INITIAL_SUPPLIERS));
   };
 
   // Phase 1: Client submits questionnaire
@@ -1363,6 +1389,25 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }));
   };
 
+  // Catálogo de Proveedores
+  const addSupplier = (supplierData: Omit<Supplier, 'id' | 'createdAt'>): Supplier => {
+    const newSupplier: Supplier = {
+      ...supplierData,
+      id: `prov-${Date.now()}`,
+      createdAt: new Date().toISOString().replace('T', ' ').substring(0, 16)
+    };
+    setSuppliers(prev => [newSupplier, ...prev]);
+    return newSupplier;
+  };
+
+  const updateSupplier = (id: string, updates: Partial<Supplier>) => {
+    setSuppliers(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+  };
+
+  const deleteSupplier = (id: string) => {
+    setSuppliers(prev => prev.filter(s => s.id !== id));
+  };
+
   const loadQuoteDraftIntoCalculator = (draft: PreloadedQuoteDraft) => {
     setPreloadedQuoteDraft(draft);
     setActiveRole('cotizador');
@@ -1398,6 +1443,10 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         customerServiceTickets,
         dailyWorkLogs,
         vehicleLogs,
+        suppliers,
+        addSupplier,
+        updateSupplier,
+        deleteSupplier,
         directorTargetMargin,
         setDirectorTargetMargin,
         noSampleDataMode,
