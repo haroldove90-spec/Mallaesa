@@ -388,6 +388,92 @@ export interface VehicleLog {
   notes?: string;
   createdAt: string;
 }
+
+export interface EmergencyContact {
+  name: string;
+  relationship: string;
+  phone: string;
+}
+
+export type EmployeeDepartment =
+  | 'instalacion_campo'
+  | 'taller_herreria'
+  | 'almacen_logistica'
+  | 'chofer_transporte'
+  | 'administracion_ventas';
+
+export interface Employee {
+  id: string;
+  code: string; // EMP-001
+  fullName: string;
+  curp: string; // 18 caracteres
+  rfc: string; // 13 caracteres con homoclave
+  nss: string; // 11 dígitos IMSS
+  phone: string;
+  email?: string;
+  address: string;
+  birthDate?: string;
+  bloodType: string; // O+, A+, etc.
+  emergencyContact: EmergencyContact;
+  jobTitle: string; // Cabo Instalador, Ayudante, Soldador, etc.
+  department: EmployeeDepartment;
+  assignedCrew?: string; // Cuadrilla Alfa, Beta, etc.
+  hireDate: string;
+  dailySalary: number; // Salario Diario Base ($ MXN)
+  hourlyRate: number;  // Tarifa por Hora Ordinaria (dailySalary / 8)
+  weeklyBaseHours: number; // 40 hrs (Ley 40 Horas México)
+  status: 'activo' | 'vacaciones' | 'incapacidad' | 'baja';
+  photoUrl?: string;
+  notes?: string;
+}
+
+export type AttendanceStatus =
+  | 'presente'
+  | 'retardo'
+  | 'falta_justificada'
+  | 'falta_injustificada'
+  | 'incapacidad'
+  | 'vacaciones'
+  | 'descanso_semanal';
+
+export interface AttendanceRecord {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  date: string; // YYYY-MM-DD
+  checkIn: string; // "08:00"
+  checkOut: string; // "17:00"
+  lunchMinutes: number; // 60
+  hoursWorked: number; // Calculado automático
+  overtimeHours: number; // Horas excedentes de 8 hrs diarias
+  status: AttendanceStatus;
+  locationOrProject?: string; // Ej. "Obra San Pedro / OT-2026-901" o "Almacén Central"
+  notes?: string;
+  verifiedBy?: string; // Cabo o Supervisor
+  createdAt: string;
+}
+
+export interface EmployeeWeeklySummary {
+  employeeId: string;
+  employeeName: string;
+  jobTitle: string;
+  department: EmployeeDepartment;
+  dailySalary: number;
+  hourlyRate: number;
+  totalHoursWorked: number;
+  regularHours: number; // Hasta 40 hrs
+  overtimeDoubleHours: number; // Primeras 9 hrs (+100% art. 67 LFT)
+  overtimeTripleHours: number; // Excedentes de 9 hrs (+200% art. 68 LFT)
+  basePay: number;
+  overtimeDoublePay: number;
+  overtimeTriplePay: number;
+  totalOvertimePay: number;
+  viaticsPay: number;
+  totalWeeklyGrossPay: number;
+  daysWorkedCount: number;
+  lftComplianceStatus: 'optimo' | 'moderado_horas_extras' | 'alerta_exceso_lft';
+}
+
 export const ROLE_DEFAULT_MODULE: Record<RoleType, string> = {
   pagina_web: 'inicio',
   cotizador: 'cotizador',

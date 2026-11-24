@@ -20,7 +20,10 @@ import {
   DailyWorkLog,
   VehicleLog,
   Supplier,
-  ROLE_DEFAULT_MODULE
+  ROLE_DEFAULT_MODULE,
+  Employee,
+  AttendanceRecord,
+  EmployeeWeeklySummary
 } from '../types';
 import {
   INITIAL_REQUESTS,
@@ -40,6 +43,7 @@ import {
   INITIAL_VEHICLE_LOGS,
   INITIAL_SUPPLIERS
 } from '../data/initialData';
+import { INITIAL_EMPLOYEES, INITIAL_ATTENDANCE } from '../data/initialEmployees';
 import { PreloadedQuoteDraft } from '../utils/assistantQuoteParser';
 
 interface MallaesaContextType {
@@ -181,6 +185,19 @@ interface MallaesaContextType {
   addSupplier: (supplier: Omit<Supplier, 'id' | 'createdAt'>) => Supplier;
   updateSupplier: (id: string, updates: Partial<Supplier>) => void;
   deleteSupplier: (id: string) => void;
+
+  // Capital Humano, Asistencia y Horas Extras (Ley 40 Horas LFT)
+  employees: Employee[];
+  attendanceRecords: AttendanceRecord[];
+  weeklyHoursLimit: number;
+  addEmployee: (employee: Omit<Employee, 'id'>) => Employee;
+  updateEmployee: (id: string, updates: Partial<Employee>) => void;
+  deleteEmployee: (id: string) => void;
+  recordAttendance: (record: Omit<AttendanceRecord, 'id' | 'createdAt'>) => AttendanceRecord;
+  updateAttendance: (id: string, updates: Partial<AttendanceRecord>) => void;
+  deleteAttendance: (id: string) => void;
+  setWeeklyHoursLimit: (hours: number) => void;
+  calculateWeeklyLaborSummary: (weekNumber?: number, year?: number) => EmployeeWeeklySummary[];
 }
 
 const MallaesaContext = createContext<MallaesaContextType | undefined>(undefined);
@@ -203,7 +220,10 @@ const STORAGE_KEYS = {
   DAILY_WORK_LOGS: 'mallaesa_daily_work_logs',
   VEHICLE_LOGS: 'mallaesa_vehicle_logs',
   DIRECTOR_TARGET_MARGIN: 'mallaesa_director_target_margin',
-  SUPPLIERS: 'mallaesa_suppliers'
+  SUPPLIERS: 'mallaesa_suppliers',
+  EMPLOYEES: 'mallaesa_employees',
+  ATTENDANCE: 'mallaesa_attendance',
+  WEEKLY_HOURS_LIMIT: 'mallaesa_weekly_hours_limit'
 };
 
 export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -349,6 +369,35 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return saved ? JSON.parse(saved) : INITIAL_SUPPLIERS;
   });
 
+  const [employees, setEmployees] = useState<Employee[]>(() => {
+    if (localStorage.getItem(STORAGE_KEYS.NO_SAMPLE) === 'true') {
+      const saved = localStorage.getItem(STORAGE_KEYS.EMPLOYEES);
+      return saved ? JSON.parse(saved) : [];
+    }
+    const saved = localStorage.getItem(STORAGE_KEYS.EMPLOYEES);
+    return saved ? JSON.parse(saved) : INITIAL_EMPLOYEES;
+  });
+
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(() => {
+    if (localStorage.getItem(STORAGE_KEYS.NO_SAMPLE) === 'true') {
+      const saved = localStorage.getItem(STORAGE_KEYS.ATTENDANCE);
+      return saved ? JSON.parse(saved) : [];
+    }
+    const saved = localStorage.getItem(STORAGE_KEYS.ATTENDANCE);
+    return saved ? JSON.parse(saved) : INITIAL_ATTENDANCE;
+  });
+
+  const [weeklyHoursLimit, setWeeklyHoursLimitState] = useState<number>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.WEEKLY_HOURS_LIMIT);
+    return saved ? Number(saved) : 40;
+  });
+
+  const setWeeklyHoursLimit = (hours: number) => {
+    const valid = Math.max(30, Math.min(56, hours));
+    setWeeklyHoursLimitState(valid);
+    localStorage.setItem(STORAGE_KEYS.WEEKLY_HOURS_LIMIT, String(valid));
+  };
+
   const [directorTargetMargin, setDirectorTargetMarginState] = useState<number>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.DIRECTOR_TARGET_MARGIN);
     return saved ? Number(saved) : 36.5;
@@ -423,6 +472,14 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem(STORAGE_KEYS.SUPPLIERS, JSON.stringify(suppliers));
   }, [suppliers]);
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify(employees));
+  }, [employees]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(attendanceRecords));
+  }, [attendanceRecords]);
+
   const setActiveRole = (role: RoleType | null) => {
     setActiveRoleState(role);
     if (role) {
@@ -457,6 +514,8 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setDailyWorkLogs([]);
     setVehicleLogs([]);
     setSuppliers([]);
+    setEmployees([]);
+    setAttendanceRecords([]);
     localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.QUOTES, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify([]));
@@ -471,6 +530,8 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem(STORAGE_KEYS.DAILY_WORK_LOGS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.VEHICLE_LOGS, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.SUPPLIERS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify([]));
   };
 
   const restoreDemoData = () => {
@@ -491,9 +552,15 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setDailyWorkLogs(INITIAL_DAILY_WORK_LOGS);
     setVehicleLogs(INITIAL_VEHICLE_LOGS);
     setSuppliers(INITIAL_SUPPLIERS);
+    setEmployees(INITIAL_EMPLOYEES);
+    setAttendanceRecords(INITIAL_ATTENDANCE);
+    setWeeklyHoursLimitState(40);
     setDirectorTargetMarginState(36.5);
     localStorage.setItem(STORAGE_KEYS.DIRECTOR_TARGET_MARGIN, '36.5');
+    localStorage.setItem(STORAGE_KEYS.WEEKLY_HOURS_LIMIT, '40');
     localStorage.setItem(STORAGE_KEYS.SUPPLIERS, JSON.stringify(INITIAL_SUPPLIERS));
+    localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify(INITIAL_EMPLOYEES));
+    localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(INITIAL_ATTENDANCE));
   };
 
   // Phase 1: Client submits questionnaire
@@ -1411,6 +1478,138 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setSuppliers(prev => prev.filter(s => s.id !== id));
   };
 
+  // Helper para cálculo diario de horas y horas extras (>8h)
+  const calculateDailyHours = (checkIn: string, checkOut: string, lunchMinutes: number = 60): { hoursWorked: number; overtimeHours: number } => {
+    if (!checkIn || !checkOut) return { hoursWorked: 0, overtimeHours: 0 };
+    const [inH, inM] = checkIn.split(':').map(Number);
+    const [outH, outM] = checkOut.split(':').map(Number);
+    if (isNaN(inH) || isNaN(inM) || isNaN(outH) || isNaN(outM)) return { hoursWorked: 0, overtimeHours: 0 };
+
+    let totalMinutes = (outH * 60 + outM) - (inH * 60 + inM) - (lunchMinutes || 0);
+    if (totalMinutes < 0) totalMinutes = 0;
+    const hoursWorked = Number((totalMinutes / 60).toFixed(2));
+    const overtimeHours = Number(Math.max(0, hoursWorked - 8).toFixed(2));
+    return { hoursWorked, overtimeHours };
+  };
+
+  // Capital Humano: Empleados
+  const addEmployee = (empData: Omit<Employee, 'id'>): Employee => {
+    const hourlyRate = empData.hourlyRate || Number((empData.dailySalary / 8).toFixed(2));
+    const newEmployee: Employee = {
+      ...empData,
+      id: `emp-${Date.now()}`,
+      hourlyRate,
+      weeklyBaseHours: empData.weeklyBaseHours || weeklyHoursLimit || 40
+    };
+    setEmployees(prev => [newEmployee, ...prev]);
+    return newEmployee;
+  };
+
+  const updateEmployee = (id: string, updates: Partial<Employee>) => {
+    setEmployees(prev => prev.map(emp => {
+      if (emp.id !== id) return emp;
+      const updated = { ...emp, ...updates };
+      if (updates.dailySalary && !updates.hourlyRate) {
+        updated.hourlyRate = Number((updates.dailySalary / 8).toFixed(2));
+      }
+      return updated;
+    }));
+  };
+
+  const deleteEmployee = (id: string) => {
+    setEmployees(prev => prev.filter(emp => emp.id !== id));
+    setAttendanceRecords(prev => prev.filter(att => att.employeeId !== id));
+  };
+
+  // Control de Asistencia & Checador
+  const recordAttendance = (recordData: Omit<AttendanceRecord, 'id' | 'createdAt'>): AttendanceRecord => {
+    const { hoursWorked, overtimeHours } = calculateDailyHours(recordData.checkIn, recordData.checkOut, recordData.lunchMinutes);
+    const newRecord: AttendanceRecord = {
+      ...recordData,
+      id: `att-${Date.now()}`,
+      hoursWorked: recordData.hoursWorked || hoursWorked,
+      overtimeHours: recordData.overtimeHours !== undefined ? recordData.overtimeHours : overtimeHours,
+      createdAt: new Date().toISOString()
+    };
+    setAttendanceRecords(prev => [newRecord, ...prev]);
+    return newRecord;
+  };
+
+  const updateAttendance = (id: string, updates: Partial<AttendanceRecord>) => {
+    setAttendanceRecords(prev => prev.map(rec => {
+      if (rec.id !== id) return rec;
+      const merged = { ...rec, ...updates };
+      if (updates.checkIn || updates.checkOut || updates.lunchMinutes !== undefined) {
+        const { hoursWorked, overtimeHours } = calculateDailyHours(merged.checkIn, merged.checkOut, merged.lunchMinutes);
+        merged.hoursWorked = hoursWorked;
+        merged.overtimeHours = overtimeHours;
+      }
+      return merged;
+    }));
+  };
+
+  const deleteAttendance = (id: string) => {
+    setAttendanceRecords(prev => prev.filter(rec => rec.id !== id));
+  };
+
+  // Cálculo Semanal de Horas Extras conforme a la Ley de 40 Horas (LFT México)
+  const calculateWeeklyLaborSummary = (): EmployeeWeeklySummary[] => {
+    return employees.map(emp => {
+      const empRecords = attendanceRecords.filter(att => att.employeeId === emp.id && att.status !== 'falta_injustificada');
+      const totalHoursWorked = Number(empRecords.reduce((sum, r) => sum + (r.hoursWorked || 0), 0).toFixed(2));
+      const daysWorkedCount = empRecords.filter(r => r.status === 'presente' || r.status === 'retardo').length;
+
+      // Base regular legal (40 horas semanales según reforma LFT)
+      const baseLegalLimit = weeklyHoursLimit || 40;
+      const regularHours = Math.min(baseLegalLimit, totalHoursWorked);
+      const totalOvertime = Math.max(0, totalHoursWorked - regularHours);
+
+      // Art. 67 y 68 LFT: Primeras 9 horas extras al 100% adicional (dobles), excedente al 200% (triples)
+      const overtimeDoubleHours = Number(Math.min(9, totalOvertime).toFixed(2));
+      const overtimeTripleHours = Number(Math.max(0, totalOvertime - 9).toFixed(2));
+
+      const hourlyRate = emp.hourlyRate || Number((emp.dailySalary / 8).toFixed(2));
+
+      // Sueldo base semanal
+      const basePay = Number((emp.dailySalary * (daysWorkedCount || 6)).toFixed(2));
+      const overtimeDoublePay = Number((overtimeDoubleHours * hourlyRate * 2).toFixed(2));
+      const overtimeTriplePay = Number((overtimeTripleHours * hourlyRate * 3).toFixed(2));
+      const totalOvertimePay = Number((overtimeDoublePay + overtimeTriplePay).toFixed(2));
+
+      // Viáticos semanales si es personal en obra
+      const viaticsPay = emp.department === 'instalacion_campo' ? 1400 : 0;
+      const totalWeeklyGrossPay = Number((basePay + totalOvertimePay + viaticsPay).toFixed(2));
+
+      let lftComplianceStatus: 'optimo' | 'moderado_horas_extras' | 'alerta_exceso_lft' = 'optimo';
+      if (totalHoursWorked > baseLegalLimit && totalHoursWorked <= baseLegalLimit + 9) {
+        lftComplianceStatus = 'moderado_horas_extras';
+      } else if (totalHoursWorked > baseLegalLimit + 9) {
+        lftComplianceStatus = 'alerta_exceso_lft';
+      }
+
+      return {
+        employeeId: emp.id,
+        employeeName: emp.fullName,
+        jobTitle: emp.jobTitle,
+        department: emp.department,
+        dailySalary: emp.dailySalary,
+        hourlyRate,
+        totalHoursWorked,
+        regularHours,
+        overtimeDoubleHours,
+        overtimeTripleHours,
+        basePay,
+        overtimeDoublePay,
+        overtimeTriplePay,
+        totalOvertimePay,
+        viaticsPay,
+        totalWeeklyGrossPay,
+        daysWorkedCount,
+        lftComplianceStatus
+      };
+    });
+  };
+
   const loadQuoteDraftIntoCalculator = (draft: PreloadedQuoteDraft) => {
     setPreloadedQuoteDraft(draft);
     setActiveRole('cotizador');
@@ -1450,6 +1649,17 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         addSupplier,
         updateSupplier,
         deleteSupplier,
+        employees,
+        attendanceRecords,
+        weeklyHoursLimit,
+        setWeeklyHoursLimit,
+        addEmployee,
+        updateEmployee,
+        deleteEmployee,
+        recordAttendance,
+        updateAttendance,
+        deleteAttendance,
+        calculateWeeklyLaborSummary,
         directorTargetMargin,
         setDirectorTargetMargin,
         noSampleDataMode,

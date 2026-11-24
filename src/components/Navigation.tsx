@@ -31,7 +31,8 @@ import {
   Headphones,
   TrendingUp,
   Truck,
-  Building2
+  Building2,
+  UserCheck
 } from 'lucide-react';
 
 export interface NavItem {
@@ -88,6 +89,7 @@ export const ROLE_MODULES: Record<RoleType, NavItem[]> = {
     { id: 'proveedores', label: 'Catálogo de Proveedores', icon: <Building2 className="w-5 h-5" /> },
     { id: 'recibos', label: 'Recibos Simples (Sin Factura)', icon: <FileText className="w-5 h-5" /> },
     { id: 'facturas', label: 'Facturación CFDI 4.0', icon: <FileCheck2 className="w-5 h-5" /> },
+    { id: 'personal_asistencia', label: 'Personal & Asistencia 40h', icon: <UserCheck className="w-5 h-5 text-emerald-600" /> },
     { id: 'gastos', label: 'Nómina & Gastos', icon: <Wallet className="w-5 h-5" /> }
   ]
 };
