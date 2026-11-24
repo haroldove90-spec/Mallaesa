@@ -1,5 +1,12 @@
 export type RoleType = 'pagina_web' | 'cotizador' | 'cliente' | 'director' | 'ventas' | 'operaciones' | 'administracion';
 
+export interface AppUser {
+  id?: string;
+  username: string;
+  fullName: string;
+  role: RoleType;
+}
+
 export interface RoleConfig {
   id: RoleType;
   name: string;

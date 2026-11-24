@@ -23,7 +23,8 @@ import {
   ROLE_DEFAULT_MODULE,
   Employee,
   AttendanceRecord,
-  EmployeeWeeklySummary
+  EmployeeWeeklySummary,
+  AppUser
 } from '../types';
 import {
   INITIAL_REQUESTS,
@@ -45,8 +46,21 @@ import {
 } from '../data/initialData';
 import { INITIAL_EMPLOYEES, INITIAL_ATTENDANCE } from '../data/initialEmployees';
 import { PreloadedQuoteDraft } from '../utils/assistantQuoteParser';
+import {
+  supabase,
+  saveToSupabase,
+  deleteFromSupabase,
+  clearTableInSupabase,
+  fetchFromSupabase,
+  getAppSettingsFromSupabase,
+  saveAppSettingsToSupabase,
+  testSupabaseConnection
+} from '../lib/supabase';
 
 interface MallaesaContextType {
+  currentUser: AppUser | null;
+  login: (username: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  logout: () => void;
   activeRole: RoleType | null;
   setActiveRole: (role: RoleType | null) => void;
   currentModule: string;
@@ -198,6 +212,10 @@ interface MallaesaContextType {
   deleteAttendance: (id: string) => void;
   setWeeklyHoursLimit: (hours: number) => void;
   calculateWeeklyLaborSummary: (weekNumber?: number, year?: number) => EmployeeWeeklySummary[];
+  isSupabaseConnected: boolean;
+  syncWithSupabase: () => Promise<{ success: boolean; message: string }>;
+  deleteProject: (id: string) => void;
+  deleteWorkOrder: (id: string) => void;
 }
 
 const MallaesaContext = createContext<MallaesaContextType | undefined>(undefined);
@@ -227,6 +245,11 @@ const STORAGE_KEYS = {
 };
 
 export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(() => {
+    const saved = localStorage.getItem('mallaesa_current_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const [activeRole, setActiveRoleState] = useState<RoleType | null>(() => {
     return (localStorage.getItem(STORAGE_KEYS.ACTIVE_ROLE) as RoleType) || null;
   });
@@ -480,6 +503,184 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(attendanceRecords));
   }, [attendanceRecords]);
 
+  const [isSupabaseConnected, setIsSupabaseConnected] = useState<boolean>(false);
+
+  const syncWithSupabase = async (): Promise<{ success: boolean; message: string }> => {
+    try {
+      const conn = await testSupabaseConnection();
+      setIsSupabaseConnected(conn.success);
+
+      const settings = await getAppSettingsFromSupabase();
+      const isSampleCleared = settings?.sample_data_cleared === true || localStorage.getItem(STORAGE_KEYS.NO_SAMPLE) === 'true';
+
+      if (settings?.weekly_hours_limit) {
+        setWeeklyHoursLimitState(settings.weekly_hours_limit);
+        localStorage.setItem(STORAGE_KEYS.WEEKLY_HOURS_LIMIT, String(settings.weekly_hours_limit));
+      }
+      if (settings?.director_target_margin) {
+        setDirectorTargetMarginState(settings.director_target_margin);
+        localStorage.setItem(STORAGE_KEYS.DIRECTOR_TARGET_MARGIN, String(settings.director_target_margin));
+      }
+      if (isSampleCleared) {
+        setNoSampleDataModeState(true);
+        localStorage.setItem(STORAGE_KEYS.NO_SAMPLE, 'true');
+      }
+
+      const [
+        remoteEmployees,
+        remoteAttendance,
+        remoteQuotes,
+        remoteProjects,
+        remoteOrders,
+        remoteSuppliers,
+        remotePOs,
+        remoteCxP,
+        remoteReceipts,
+        remoteInvoices,
+        remoteApprovals,
+        remoteDailyLogs,
+        remoteVehicleLogs,
+        remoteRequests
+      ] = await Promise.all([
+        fetchFromSupabase<Employee>('employees'),
+        fetchFromSupabase<AttendanceRecord>('attendance_records'),
+        fetchFromSupabase<FormalQuote>('formal_quotes'),
+        fetchFromSupabase<Project>('projects'),
+        fetchFromSupabase<WorkOrder>('work_orders'),
+        fetchFromSupabase<Supplier>('suppliers'),
+        fetchFromSupabase<PurchaseOrder>('purchase_orders'),
+        fetchFromSupabase<AccountsPayableItem>('accounts_payable'),
+        fetchFromSupabase<SimpleReceipt>('simple_receipts'),
+        fetchFromSupabase<Invoice>('invoices'),
+        fetchFromSupabase<Approval>('approvals'),
+        fetchFromSupabase<DailyWorkLog>('daily_work_logs'),
+        fetchFromSupabase<VehicleLog>('vehicle_logs'),
+        fetchFromSupabase<QuoteRequest>('quote_requests')
+      ]);
+
+      if (remoteEmployees !== null && (remoteEmployees.length > 0 || isSampleCleared)) {
+        setEmployees(remoteEmployees);
+      }
+      if (remoteAttendance !== null && (remoteAttendance.length > 0 || isSampleCleared)) {
+        setAttendanceRecords(remoteAttendance);
+      }
+      if (remoteQuotes !== null && (remoteQuotes.length > 0 || isSampleCleared)) {
+        setFormalQuotes(remoteQuotes);
+      }
+      if (remoteProjects !== null && (remoteProjects.length > 0 || isSampleCleared)) {
+        setProjects(remoteProjects);
+      }
+      if (remoteOrders !== null && (remoteOrders.length > 0 || isSampleCleared)) {
+        setWorkOrders(remoteOrders);
+      }
+      if (remoteSuppliers !== null && (remoteSuppliers.length > 0 || isSampleCleared)) {
+        setSuppliers(remoteSuppliers);
+      }
+      if (remotePOs !== null && (remotePOs.length > 0 || isSampleCleared)) {
+        setPurchaseOrders(remotePOs);
+      }
+      if (remoteCxP !== null && (remoteCxP.length > 0 || isSampleCleared)) {
+        setAccountsPayable(remoteCxP);
+      }
+      if (remoteReceipts !== null && (remoteReceipts.length > 0 || isSampleCleared)) {
+        setSimpleReceipts(remoteReceipts);
+      }
+      if (remoteInvoices !== null && (remoteInvoices.length > 0 || isSampleCleared)) {
+        setInvoices(remoteInvoices);
+      }
+      if (remoteApprovals !== null && (remoteApprovals.length > 0 || isSampleCleared)) {
+        setApprovals(remoteApprovals);
+      }
+      if (remoteDailyLogs !== null && (remoteDailyLogs.length > 0 || isSampleCleared)) {
+        setDailyWorkLogs(remoteDailyLogs);
+      }
+      if (remoteVehicleLogs !== null && (remoteVehicleLogs.length > 0 || isSampleCleared)) {
+        setVehicleLogs(remoteVehicleLogs);
+      }
+      if (remoteRequests !== null && (remoteRequests.length > 0 || isSampleCleared)) {
+        setRequests(remoteRequests);
+      }
+
+      return {
+        success: conn.success,
+        message: conn.message
+      };
+    } catch (err: any) {
+      return { success: false, message: `Error al conectar con Supabase: ${err?.message || err}` };
+    }
+  };
+
+  useEffect(() => {
+    syncWithSupabase();
+  }, []);
+
+  const login = async (usernameInput: string, passwordInput: string): Promise<{ success: boolean; message?: string }> => {
+    const u = usernameInput.trim().toLowerCase();
+    const p = passwordInput.trim();
+
+    // 1. Verificación directa con las credenciales creadas
+    if (u === 'haroldo90' && p === 'Chevropar#1970') {
+      const user: AppUser = {
+        username: 'haroldo90',
+        fullName: 'Haroldo (Administración General)',
+        role: 'administracion'
+      };
+      setCurrentUser(user);
+      localStorage.setItem('mallaesa_current_user', JSON.stringify(user));
+      setActiveRole('administracion');
+      return { success: true };
+    }
+
+    if (u === 'eduardo_siller' && p === 'Chevropar#1970') {
+      const user: AppUser = {
+        username: 'eduardo_siller',
+        fullName: 'Ing. Eduardo Siller (Dirección General)',
+        role: 'director'
+      };
+      setCurrentUser(user);
+      localStorage.setItem('mallaesa_current_user', JSON.stringify(user));
+      setActiveRole('director');
+      return { success: true };
+    }
+
+    // 2. Verificación en Supabase si está disponible la tabla app_users
+    try {
+      const { data, error } = await supabase
+        .from('app_users')
+        .select('*')
+        .ilike('username', u)
+        .eq('password', p)
+        .maybeSingle();
+
+      if (!error && data && data.status === 'activo') {
+        const user: AppUser = {
+          id: data.id,
+          username: data.username,
+          fullName: data.full_name,
+          role: (data.role as RoleType) || 'administracion'
+        };
+        setCurrentUser(user);
+        localStorage.setItem('mallaesa_current_user', JSON.stringify(user));
+        setActiveRole(user.role);
+        return { success: true };
+      }
+    } catch (err) {
+      console.warn('[Auth] Error al verificar credenciales en Supabase:', err);
+    }
+
+    return {
+      success: false,
+      message: 'Usuario o contraseña incorrectos. Verifique sus credenciales.'
+    };
+  };
+
+  const logout = () => {
+    setCurrentUser(null);
+    setActiveRoleState(null);
+    localStorage.removeItem('mallaesa_current_user');
+    localStorage.removeItem(STORAGE_KEYS.ACTIVE_ROLE);
+  };
+
   const setActiveRole = (role: RoleType | null) => {
     setActiveRoleState(role);
     if (role) {
@@ -494,6 +695,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const setNoSampleDataMode = (enabled: boolean) => {
     setNoSampleDataModeState(enabled);
     localStorage.setItem(STORAGE_KEYS.NO_SAMPLE, String(enabled));
+    saveAppSettingsToSupabase({ sample_data_cleared: enabled });
     if (enabled) {
       clearAllSampleData();
     }
@@ -516,27 +718,47 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setSuppliers([]);
     setEmployees([]);
     setAttendanceRecords([]);
-    localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.QUOTES, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.WORK_ORDERS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.APPROVALS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.PURCHASE_ORDERS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.ACCOUNTS_PAYABLE, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.SIMPLE_RECEIPTS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.WAREHOUSE_MOVEMENTS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.CUSTOMER_SERVICE_TICKETS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.DAILY_WORK_LOGS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.VEHICLE_LOGS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.SUPPLIERS, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify([]));
-    localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify([]));
+
+    // Marca persistente en localStorage para que NUNCA vuelvan a cargar datos demo
+    setNoSampleDataModeState(true);
+    localStorage.setItem(STORAGE_KEYS.NO_SAMPLE, 'true');
+
+    Object.values(STORAGE_KEYS).forEach(key => {
+      if (key !== STORAGE_KEYS.ACTIVE_ROLE && key !== STORAGE_KEYS.NO_SAMPLE) {
+        localStorage.setItem(key, JSON.stringify([]));
+      }
+    });
+
+    // Guardar marca permanente en Supabase app_settings
+    saveAppSettingsToSupabase({ sample_data_cleared: true });
+
+    // Vaciar registros en Supabase
+    const tables = [
+      'employees',
+      'attendance_records',
+      'quote_requests',
+      'formal_quotes',
+      'projects',
+      'work_orders',
+      'inventory',
+      'suppliers',
+      'purchase_orders',
+      'accounts_payable',
+      'simple_receipts',
+      'invoices',
+      'approvals',
+      'daily_work_logs',
+      'vehicle_logs',
+      'customer_service_tickets',
+      'warehouse_movements'
+    ];
+    tables.forEach(tbl => clearTableInSupabase(tbl));
   };
 
   const restoreDemoData = () => {
     setNoSampleDataModeState(false);
     localStorage.setItem(STORAGE_KEYS.NO_SAMPLE, 'false');
+    saveAppSettingsToSupabase({ sample_data_cleared: false, weekly_hours_limit: 40, director_target_margin: 36.5 });
     setRequests(INITIAL_REQUESTS);
     setFormalQuotes(INITIAL_FORMAL_QUOTES);
     setProjects(INITIAL_PROJECTS);
@@ -561,6 +783,23 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem(STORAGE_KEYS.SUPPLIERS, JSON.stringify(INITIAL_SUPPLIERS));
     localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify(INITIAL_EMPLOYEES));
     localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(INITIAL_ATTENDANCE));
+
+    // Guardar datos iniciales en Supabase
+    INITIAL_EMPLOYEES.forEach(emp => saveToSupabase('employees', emp));
+    INITIAL_ATTENDANCE.forEach(att => saveToSupabase('attendance_records', att));
+    INITIAL_SUPPLIERS.forEach(sup => saveToSupabase('suppliers', sup));
+    INITIAL_FORMAL_QUOTES.forEach(q => saveToSupabase('formal_quotes', q));
+    INITIAL_PROJECTS.forEach(p => saveToSupabase('projects', p));
+  };
+
+  const deleteProject = (id: string) => {
+    setProjects(prev => prev.filter(p => p.id !== id));
+    deleteFromSupabase('projects', id);
+  };
+
+  const deleteWorkOrder = (id: string) => {
+    setWorkOrders(prev => prev.filter(w => w.id !== id));
+    deleteFromSupabase('work_orders', id);
   };
 
   // Phase 1: Client submits questionnaire
@@ -616,6 +855,8 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setRequests(prev => [newReq, ...prev]);
     setProjects(prev => [newProj, ...prev]);
+    saveToSupabase('quote_requests', newReq);
+    saveToSupabase('projects', newProj);
     return folio;
   };
 
@@ -732,10 +973,15 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setRequests(prev => [newReq, ...prev.filter(r => r.folio !== data.folio)]);
     setFormalQuotes(prev => [newQuote, ...prev.filter(q => q.folio !== data.folio)]);
     setProjects(prev => [newProj, ...prev.filter(p => p.folio !== data.folio)]);
+
+    saveToSupabase('quote_requests', newReq);
+    saveToSupabase('formal_quotes', newQuote);
+    saveToSupabase('projects', newProj);
   };
 
   const deleteFormalQuote = (quoteId: string) => {
     setFormalQuotes(prev => prev.filter(q => q.id !== quoteId));
+    deleteFromSupabase('formal_quotes', quoteId);
   };
 
   // Phase 2: Sales creates quotation
@@ -1467,15 +1713,24 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       createdAt: new Date().toISOString().replace('T', ' ').substring(0, 16)
     };
     setSuppliers(prev => [newSupplier, ...prev]);
+    saveToSupabase('suppliers', newSupplier);
     return newSupplier;
   };
 
   const updateSupplier = (id: string, updates: Partial<Supplier>) => {
-    setSuppliers(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+    setSuppliers(prev => prev.map(s => {
+      if (s.id === id) {
+        const updated = { ...s, ...updates };
+        saveToSupabase('suppliers', updated);
+        return updated;
+      }
+      return s;
+    }));
   };
 
   const deleteSupplier = (id: string) => {
     setSuppliers(prev => prev.filter(s => s.id !== id));
+    deleteFromSupabase('suppliers', id);
   };
 
   // Helper para cálculo diario de horas y horas extras (>8h)
@@ -1502,6 +1757,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       weeklyBaseHours: empData.weeklyBaseHours || weeklyHoursLimit || 40
     };
     setEmployees(prev => [newEmployee, ...prev]);
+    saveToSupabase('employees', newEmployee);
     return newEmployee;
   };
 
@@ -1512,6 +1768,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (updates.dailySalary && !updates.hourlyRate) {
         updated.hourlyRate = Number((updates.dailySalary / 8).toFixed(2));
       }
+      saveToSupabase('employees', updated);
       return updated;
     }));
   };
@@ -1519,6 +1776,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const deleteEmployee = (id: string) => {
     setEmployees(prev => prev.filter(emp => emp.id !== id));
     setAttendanceRecords(prev => prev.filter(att => att.employeeId !== id));
+    deleteFromSupabase('employees', id);
   };
 
   // Control de Asistencia & Checador
@@ -1532,6 +1790,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       createdAt: new Date().toISOString()
     };
     setAttendanceRecords(prev => [newRecord, ...prev]);
+    saveToSupabase('attendance_records', newRecord);
     return newRecord;
   };
 
@@ -1544,12 +1803,14 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         merged.hoursWorked = hoursWorked;
         merged.overtimeHours = overtimeHours;
       }
+      saveToSupabase('attendance_records', merged);
       return merged;
     }));
   };
 
   const deleteAttendance = (id: string) => {
     setAttendanceRecords(prev => prev.filter(rec => rec.id !== id));
+    deleteFromSupabase('attendance_records', id);
   };
 
   // Cálculo Semanal de Horas Extras conforme a la Ley de 40 Horas (LFT México)
@@ -1623,6 +1884,9 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   return (
     <MallaesaContext.Provider
       value={{
+        currentUser,
+        login,
+        logout,
         activeRole,
         setActiveRole,
         currentModule,
@@ -1692,7 +1956,11 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         addDailyWorkLog,
         addVehicleLog,
         updateVehicleLogReturn,
-        updateProjectPaymentScheme
+        updateProjectPaymentScheme,
+        isSupabaseConnected,
+        syncWithSupabase,
+        deleteProject,
+        deleteWorkOrder
       }}
     >
       {children}

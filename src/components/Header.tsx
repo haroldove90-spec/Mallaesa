@@ -36,7 +36,7 @@ const ROLE_LABELS: Record<string, { title: string; badge: string }> = {
 };
 
 export const Header: React.FC = () => {
-  const { activeRole, setActiveRole } = useMallaesa();
+  const { activeRole, setActiveRole, isSupabaseConnected, currentUser, logout } = useMallaesa();
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [showDataModal, setShowDataModal] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
@@ -73,16 +73,16 @@ export const Header: React.FC = () => {
               </button>
             </div>
 
-            {/* Identificación del Rol Activo */}
+            {/* Identificación del Rol Activo y Usuario */}
             {roleInfo && (
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-stone-100 border border-stone-200">
                 <UserCheck className="w-4 h-4 text-[#898A82]" />
                 <div className="text-left">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block leading-tight">
-                    {roleInfo.badge}
+                    {currentUser ? currentUser.username : roleInfo.badge}
                   </span>
                   <span className="text-xs font-bold text-black block leading-tight">
-                    {roleInfo.title}
+                    {currentUser ? currentUser.fullName : roleInfo.title}
                   </span>
                 </div>
               </div>
@@ -93,11 +93,15 @@ export const Header: React.FC = () => {
               {/* Botón Gestión de Datos y Supabase */}
               <button
                 onClick={() => setShowDataModal(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-stone-700 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-lg transition"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-stone-700 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-lg transition cursor-pointer"
                 title="Borrar datos de muestra o configurar Supabase"
               >
                 <Database className="w-3.5 h-3.5 text-[#898A82]" />
-                <span className="hidden md:inline">Datos Demo / Supabase</span>
+                <span className="hidden md:inline">Supabase & Datos</span>
+                <span
+                  className={`w-2 h-2 rounded-full ${isSupabaseConnected ? 'bg-emerald-500' : 'bg-amber-400'}`}
+                  title={isSupabaseConnected ? 'Conectado con Supabase' : 'Conectando con Supabase...'}
+                />
               </button>
 
               {/* Botón de Instalación Rápida de la Aplicación */}
@@ -112,11 +116,11 @@ export const Header: React.FC = () => {
                 </button>
               )}
 
-              {/* Botón de Cierre de Sesión (Regresa a selector limpio) */}
+              {/* Botón de Cierre de Sesión (Regresa al formulario de login) */}
               <button
-                onClick={() => setActiveRole(null)}
+                onClick={logout}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:text-black hover:bg-stone-100 border border-stone-200 rounded-lg transition cursor-pointer"
-                title="Cambiar de Rol o Cerrar Sesión"
+                title="Cerrar Sesión y volver al Login"
               >
                 <LogOut className="w-3.5 h-3.5 text-stone-500" />
                 <span className="hidden sm:inline">Cerrar Sesión</span>

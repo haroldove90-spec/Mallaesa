@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MallaesaProvider, useMallaesa } from './context/MallaesaContext';
 import { SplashScreen } from './components/SplashScreen';
-import { RoleSelector } from './components/RoleSelector';
+import { LoginForm } from './components/LoginForm';
 import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
 import { WebsitePortal } from './views/website/WebsitePortal';
@@ -41,9 +41,9 @@ function DashboardContent() {
         <SplashScreen onFinish={() => setShowSplash(false)} />
       )}
 
-      {/* Si no hay rol activo: Pantalla de Inicio con un solo logo arriba y tarjetas limpias */}
+      {/* Formulario de Acceso Oficial MALLAESA */}
       {!activeRole ? (
-        <RoleSelector />
+        <LoginForm />
       ) : activeRole === 'pagina_web' ? (
         /* Rol Página Web: Sitio Oficial www.mallaesa.com a pantalla completa con navegación responsiva propia */
         <WebsitePortal
