@@ -3,7 +3,7 @@ import { useMallaesa } from '../context/MallaesaContext';
 import { Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
 
 export const LoginForm: React.FC = () => {
-  const { login, setActiveRole } = useMallaesa();
+  const { login } = useMallaesa();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -149,28 +149,9 @@ export const LoginForm: React.FC = () => {
           </form>
         </div>
 
-        {/* ACCESO DIRECTO AL SITIO WEB PÚBLICO O COTIZADOR ABIERTO */}
-        <div className="mt-6 text-center">
-          <p className="text-xs text-stone-500">
-            ¿Deseas consultar el catálogo o cotizar sin iniciar sesión?
-          </p>
-          <div className="mt-1 flex items-center justify-center gap-3 text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => setActiveRole('pagina_web')}
-              className="text-[#898A82] hover:text-black underline cursor-pointer"
-            >
-              Sitio Web Oficial
-            </button>
-            <span className="text-stone-300">•</span>
-            <button
-              type="button"
-              onClick={() => setActiveRole('cotizador')}
-              className="text-[#898A82] hover:text-black underline cursor-pointer"
-            >
-              Cotizador Inteligente
-            </button>
-          </div>
+        {/* AVISO DE PRIVACIDAD & SEGURIDAD */}
+        <div className="mt-8 text-center text-xs text-stone-400 font-medium">
+          Acceso privado & confidencial • MALLAESA Seguridad Perimetral
         </div>
       </div>
     </div>
