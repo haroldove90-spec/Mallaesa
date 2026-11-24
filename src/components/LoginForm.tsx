@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMallaesa } from '../context/MallaesaContext';
-import { Eye, EyeOff, Lock, User, ArrowRight, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
 
 export const LoginForm: React.FC = () => {
   const { login, setActiveRole } = useMallaesa();
@@ -30,12 +30,6 @@ export const LoginForm: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleQuickFill = (u: string, p: string) => {
-    setUsername(u);
-    setPassword(p);
-    setErrorMessage('');
   };
 
   return (
@@ -89,7 +83,7 @@ export const LoginForm: React.FC = () => {
                     setUsername(e.target.value);
                     if (errorMessage) setErrorMessage('');
                   }}
-                  placeholder="Ej. haroldo90 o eduardo_siller"
+                  placeholder="Ingresa tu nombre de usuario"
                   className="w-full px-4 py-3 bg-stone-50 border border-stone-300 rounded-xl text-sm font-semibold text-black placeholder:text-stone-400 focus:outline-hidden focus:border-black focus:bg-white focus:ring-1 focus:ring-black transition"
                 />
               </div>
@@ -153,34 +147,6 @@ export const LoginForm: React.FC = () => {
               </button>
             </div>
           </form>
-
-          {/* CREDENCIALES RÁPIDAS PARA PRUEBAS (BOTONES 1-CLIC) */}
-          <div className="mt-6 pt-5 border-t border-stone-100 space-y-2.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400 block text-center">
-              Credenciales oficiales configuradas
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickFill('haroldo90', 'Chevropar#1970')}
-                className="p-2 text-left bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-lg transition cursor-pointer group"
-              >
-                <div className="text-[10px] font-bold uppercase text-stone-500">Administrador</div>
-                <div className="text-xs font-bold text-black group-hover:text-black">haroldo90</div>
-                <div className="text-[10px] text-stone-400 font-mono">Chevropar#1970</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickFill('eduardo_siller', 'Chevropar#1970')}
-                className="p-2 text-left bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-lg transition cursor-pointer group"
-              >
-                <div className="text-[10px] font-bold uppercase text-stone-500">Dirección General</div>
-                <div className="text-xs font-bold text-black group-hover:text-black">eduardo_siller</div>
-                <div className="text-[10px] text-stone-400 font-mono">Chevropar#1970</div>
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* ACCESO DIRECTO AL SITIO WEB PÚBLICO O COTIZADOR ABIERTO */}
