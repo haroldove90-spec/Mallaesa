@@ -19,6 +19,7 @@ import {
   SUPABASE_ANON_KEY,
   SUPABASE_PROJECT_ID,
   SUPABASE_SQL_SCRIPT,
+  SUPABASE_FIX_PERMISSIONS_SQL,
   testSupabaseConnection
 } from '../lib/supabase';
 
@@ -45,10 +46,11 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ isOpen
     isSupabaseConnected
   } = useMallaesa();
 
-  const [activeTab, setActiveTab] = useState<'demo' | 'supabase' | 'sql'>('supabase');
+  const [activeTab, setActiveTab] = useState<'demo' | 'supabase' | 'sql' | 'permisos'>('supabase');
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'success' | 'warning' | 'error'>('idle');
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [copiedSql, setCopiedSql] = useState(false);
+  const [copiedPermissionsSql, setCopiedPermissionsSql] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
 
@@ -74,6 +76,12 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ isOpen
     navigator.clipboard.writeText(SUPABASE_SQL_SCRIPT);
     setCopiedSql(true);
     setTimeout(() => setCopiedSql(false), 2500);
+  };
+
+  const handleCopyPermissionsSql = () => {
+    navigator.clipboard.writeText(SUPABASE_FIX_PERMISSIONS_SQL);
+    setCopiedPermissionsSql(true);
+    setTimeout(() => setCopiedPermissionsSql(false), 2500);
   };
 
   const handleTestConnection = async () => {
@@ -137,9 +145,10 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ isOpen
         {/* Tabs */}
         <div className="flex border-b border-stone-200 bg-stone-100 px-6 overflow-x-auto">
           {[
-            { id: 'supabase', label: '1. Conexión Supabase & Sincronización', icon: <Server className="w-4 h-4" /> },
-            { id: 'sql', label: '2. Script SQL DDL (Tablas & RLS)', icon: <ShieldCheck className="w-4 h-4" /> },
-            { id: 'demo', label: '3. Datos de Muestra & Producción', icon: <Trash2 className="w-4 h-4" /> }
+            { id: 'supabase', label: '1. Conexión & Diagnóstico', icon: <Server className="w-4 h-4" /> },
+            { id: 'permisos', label: '2. Reparar Permisos (GRANT ALL)', icon: <AlertTriangle className="w-4 h-4 text-amber-500" /> },
+            { id: 'sql', label: '3. Script DDL Completo (Tablas & RLS)', icon: <ShieldCheck className="w-4 h-4" /> },
+            { id: 'demo', label: '4. Datos de Muestra & Producción', icon: <Trash2 className="w-4 h-4" /> }
           ].map(tab => (
             <button
               key={tab.id}
@@ -163,6 +172,61 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ isOpen
              ======================================================== */}
           {activeTab === 'supabase' && (
             <div className="space-y-5">
+              {/* ALERTA DE PERMISOS REQUERIDOS SI POSTGRESQL BLOQUEÓ TABLAS */}
+              {(statusMessage.includes('permisos') || statusMessage.includes('permission denied') || connectionStatus === 'error') && (
+                <div className="p-4 bg-amber-50 border-2 border-amber-300 rounded-xl space-y-3">
+                  <div className="flex items-start gap-2.5">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h5 className="font-bold text-xs text-amber-950 uppercase tracking-wide">
+                        Solución requerida en Supabase: "permission denied for table ..."
+                      </h5>
+                      <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                        Tus tablas ya existen en Supabase, pero PostgreSQL necesita otorgar permisos <strong>GRANT ALL</strong> al rol público (<code className="bg-white/80 px-1 py-0.5 rounded font-mono text-[11px]">anon</code>) para permitir guardar y consultar datos.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleCopyPermissionsSql}
+                      className="px-4 py-2 bg-black hover:bg-stone-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      {copiedPermissionsSql ? (
+                        <>
+                          <Check className="w-4 h-4 text-emerald-400" />
+                          <span>¡Script de Permisos Copiado!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                          <span>Copiar Script de Permisos (GRANT ALL)</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('permisos')}
+                      className="px-3 py-2 bg-white hover:bg-stone-100 text-amber-900 border border-amber-300 rounded-lg text-xs font-bold transition cursor-pointer"
+                    >
+                      Ver Instrucciones Paso a Paso
+                    </button>
+
+                    <a
+                      href={`https://supabase.com/dashboard/project/${SUPABASE_PROJECT_ID}/sql/new`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-2 bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer sm:ml-auto"
+                    >
+                      <span>Abrir SQL Editor en Supabase</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </div>
+              )}
+
               {/* Tarjeta de Estado de Conexión */}
               <div className={`p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
                 connectionStatus === 'success'
@@ -196,7 +260,7 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ isOpen
                         ? 'Verificando con Supabase Cloud...'
                         : connectionStatus === 'success'
                         ? 'Proyecto Vinculado y Operativo'
-                        : 'Atención: Verifique las tablas en Supabase'}
+                        : 'Atención: Permisos requeridos en Supabase'}
                     </h4>
                     <p className="text-xs text-stone-600 mt-0.5 max-w-md">
                       {statusMessage || 'Conectado a https://uivyldmrbdwvbagsakij.supabase.co'}
@@ -277,7 +341,85 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ isOpen
           )}
 
           {/* ========================================================
-              TAB 2: SCRIPT SQL DDL COMPLETO PARA SUPABASE
+              TAB 2: REPARACIÓN RÁPIDA DE PERMISOS (GRANT ALL)
+             ======================================================== */}
+          {activeTab === 'permisos' && (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
+                      Solución Inmediata
+                    </span>
+                    <span className="text-xs font-bold text-stone-700">
+                      Corrige: "permission denied for table ..."
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-sm text-black mt-1">
+                    Script de Permisos & Row Level Security (RLS)
+                  </h4>
+                  <p className="text-xs text-stone-600">
+                    Otorga a la clave anónima (anon) de Supabase los privilegios de lectura, escritura y políticas de seguridad en las tablas.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleCopyPermissionsSql}
+                  className="flex items-center justify-center gap-1.5 py-2.5 px-4 bg-black hover:bg-stone-800 text-white rounded-xl font-bold text-xs shadow-md transition cursor-pointer self-start sm:self-auto shrink-0"
+                >
+                  {copiedPermissionsSql ? (
+                    <>
+                      <Check className="w-4 h-4 text-emerald-400" />
+                      <span>¡Copiado con Éxito!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      <span>Copiar Script de Permisos</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Guía de 3 pasos */}
+              <div className="bg-amber-50/70 border border-amber-200 p-4 rounded-xl text-xs text-amber-950 space-y-2">
+                <span className="font-black uppercase tracking-wider text-[11px] block text-amber-900">
+                  Instrucciones para aplicar en Supabase:
+                </span>
+                <ol className="list-decimal pl-4 space-y-1.5 text-xs text-amber-900">
+                  <li>
+                    Haz clic en el botón superior <strong>"Copiar Script de Permisos"</strong>.
+                  </li>
+                  <li>
+                    Abre el{' '}
+                    <a
+                      href={`https://supabase.com/dashboard/project/${SUPABASE_PROJECT_ID}/sql/new`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold underline text-black hover:text-emerald-700"
+                    >
+                      SQL Editor de tu proyecto Supabase ({SUPABASE_PROJECT_ID}) <ExternalLink className="w-3 h-3 inline" />
+                    </a>.
+                  </li>
+                  <li>
+                    Pega el código en la ventana de consulta y presiona el botón verde <strong>RUN</strong>.
+                  </li>
+                </ol>
+                <div className="text-[11px] text-amber-800 pt-1 border-t border-amber-200/80">
+                  ⚡ <em>En cuanto presiones RUN, todas las advertencias desaparecerán y la sincronización quedará 100% activa.</em>
+                </div>
+              </div>
+
+              {/* Bloque de Código SQL */}
+              <pre className="bg-stone-900 text-stone-100 p-4 rounded-xl text-[11px] font-mono overflow-x-auto max-h-72 leading-relaxed border border-stone-800">
+                {SUPABASE_FIX_PERMISSIONS_SQL}
+              </pre>
+            </div>
+          )}
+
+          {/* ========================================================
+              TAB 3: SCRIPT SQL DDL COMPLETO PARA SUPABASE
              ======================================================== */}
           {activeTab === 'sql' && (
             <div className="space-y-4">

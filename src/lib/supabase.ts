@@ -18,11 +18,20 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 /**
  * Verifica la conectividad con el proyecto de Supabase
  */
-export async function testSupabaseConnection(): Promise<{ success: boolean; message: string; details?: any }> {
+export async function testSupabaseConnection(): Promise<{ success: boolean; message: string; details?: any; needsGrants?: boolean }> {
   try {
     // Intentamos consultar la tabla de app_settings o hacer una llamada básica
     const { data, error } = await supabase.from('app_settings').select('*').limit(1);
     if (error) {
+      // Si PostgreSQL niega el permiso (código 42501 / permission denied)
+      if (error.message.includes('permission denied') || error.code === '42501') {
+        return {
+          success: false,
+          needsGrants: true,
+          message: 'Atención: Tablas detectadas en Supabase pero PostgreSQL requiere permisos GRANT para el rol público (anon). Ejecuta el script de permisos en SQL Editor.'
+        };
+      }
+
       // Si el error es que la tabla no existe aún en el schema cache (PGRST205 / PGRST116), las credenciales y la conexión API son 100% válidas
       if (
         error.code === 'PGRST116' ||
@@ -44,7 +53,7 @@ export async function testSupabaseConnection(): Promise<{ success: boolean; mess
     }
     return {
       success: true,
-      message: 'Conexión exitosa y tablas detectadas en Supabase.',
+      message: 'Conexión exitosa y permisos verificados en Supabase.',
       details: data
     };
   } catch (err: any) {
@@ -189,6 +198,12 @@ export async function saveToSupabase(tableName: string, record: any): Promise<bo
 
       console.warn(`[Supabase] Intento ${attempt + 1} en ${tableName}:`, error.message);
 
+      // Si el error es de permisos en PostgreSQL (permission denied / 42501), no tiene sentido reintentar columnas
+      if (error.message.includes('permission denied') || error.code === '42501') {
+        console.warn(`[Supabase] Permiso denegado al guardar en '${tableName}': requiere ejecutar script GRANT en Supabase SQL Editor.`);
+        return false;
+      }
+
       // Detectar nombres de columna faltantes en el schema cache de PostgREST o en PostgreSQL:
       // Ej 1: "Could not find the 'assignedCrew' column of 'employees' in the schema cache"
       // Ej 2: 'column "assigned_crew" of relation "employees" does not exist'
@@ -275,7 +290,11 @@ export async function fetchFromSupabase<T = any>(tableName: string): Promise<T[]
       result = await supabase.from(tableName).select('*');
     }
     if (result.error) {
-      console.warn(`[Supabase] Error al consultar tabla ${tableName}:`, result.error.message);
+      if (result.error.message.includes('permission denied') || result.error.code === '42501') {
+        console.warn(`[Supabase] Permiso pendiente en '${tableName}': requiere ejecutar GRANT en Supabase SQL Editor.`);
+      } else {
+        console.warn(`[Supabase] Error al consultar tabla ${tableName}:`, result.error.message);
+      }
       return null;
     }
     const data = result.data;
@@ -754,10 +773,24 @@ CREATE TABLE IF NOT EXISTS public.warehouse_movements (
 );
 
 -- =====================================================================
--- HABILITACIÓN DE ROW LEVEL SECURITY (RLS) Y POLÍTICAS DE PERMISO
--- Permite lectura, guardado y borrado mediante la clave pública (anon)
+-- HABILITACIÓN DE PRIVILEGIOS POSTGRESQL (GRANT ALL) Y ROW LEVEL SECURITY (RLS)
+-- Resuelve: "permission denied for table ..."
 -- =====================================================================
 
+-- 1. Conceder uso del esquema public a anon, authenticated y service_role
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+
+-- 2. Conceder permisos de lectura y escritura en todas las tablas y secuencias
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
+
+-- 3. Permisos automáticos para futuras tablas
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
+
+-- 4. Habilitar RLS con políticas de acceso total para anon y authenticated
 DO $$ 
 DECLARE
     tbl TEXT;
@@ -773,6 +806,7 @@ BEGIN
             'warehouse_movements'
         )
     LOOP
+        EXECUTE format('GRANT ALL ON TABLE public.%I TO anon, authenticated, service_role;', tbl);
         EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY;', tbl);
         EXECUTE format('DROP POLICY IF EXISTS "Anon Permiso Total" ON public.%I;', tbl);
         EXECUTE format('CREATE POLICY "Anon Permiso Total" ON public.%I FOR ALL TO anon USING (true) WITH CHECK (true);', tbl);
@@ -785,4 +819,45 @@ END $$;
 INSERT INTO public.app_settings (id, sample_data_cleared, weekly_hours_limit, director_target_margin)
 VALUES ('global', false, 40, 36.5)
 ON CONFLICT (id) DO NOTHING;
+`;
+
+/**
+ * SCRIPT SQL ESPECÍFICO PARA CORREGIR "permission denied for table ..."
+ * Concede permisos de lectura, escritura y RLS al rol anon en Supabase.
+ */
+export const SUPABASE_FIX_PERMISSIONS_SQL = `-- =====================================================================
+-- REPARACIÓN RÁPIDA DE PERMISOS POSTGRESQL PARA MALLAESA
+-- Resuelve el error: "permission denied for table ..."
+-- =====================================================================
+
+-- 1. Dar acceso al esquema público
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+
+-- 2. Conceder todos los permisos en tablas, secuencias y funciones
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
+
+-- 3. Configurar permisos automáticos a futuro
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
+
+-- 4. Habilitar RLS y políticas abiertas para lectura/escritura pública
+DO $$ 
+DECLARE
+    tbl TEXT;
+BEGIN
+    FOR tbl IN 
+        SELECT tablename FROM pg_tables 
+        WHERE schemaname = 'public' 
+    LOOP
+        EXECUTE format('GRANT ALL ON TABLE public.%I TO anon, authenticated, service_role;', tbl);
+        EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY;', tbl);
+        EXECUTE format('DROP POLICY IF EXISTS "Anon Permiso Total" ON public.%I;', tbl);
+        EXECUTE format('CREATE POLICY "Anon Permiso Total" ON public.%I FOR ALL TO anon USING (true) WITH CHECK (true);', tbl);
+        EXECUTE format('DROP POLICY IF EXISTS "Auth Permiso Total" ON public.%I;', tbl);
+        EXECUTE format('CREATE POLICY "Auth Permiso Total" ON public.%I FOR ALL TO authenticated USING (true) WITH CHECK (true);', tbl);
+    END LOOP;
+END $$;
 `;
