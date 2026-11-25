@@ -615,23 +615,20 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   const login = async (usernameInput: string, passwordInput: string): Promise<{ success: boolean; message?: string }> => {
-    const u = usernameInput.trim().toLowerCase();
-    const p = passwordInput.trim();
+    const rawU = (usernameInput || '').trim().toLowerCase();
+    const cleanU = rawU.replace(/\s+/g, '_');
+    const uNoUnderscore = cleanU.replace(/_/g, '');
+    const cleanP = (passwordInput || '').trim();
 
-    // 1. Verificación directa con las credenciales creadas
-    if (u === 'haroldo90' && p === 'Chevropar#1970') {
-      const user: AppUser = {
-        username: 'haroldo90',
-        fullName: 'Haroldo (Administración General)',
-        role: 'administracion'
-      };
-      setCurrentUser(user);
-      localStorage.setItem('mallaesa_current_user', JSON.stringify(user));
-      setActiveRole('administracion');
-      return { success: true };
-    }
-
-    if (u === 'eduardo_siller' && p === 'Chevropar#1970') {
+    // 1. Verificación tolerante para Eduardo Siller
+    const isEduardo =
+      cleanU === 'eduardo_siller' ||
+      cleanU === 'eduardo-siller' ||
+      cleanU === 'eduardo.siller' ||
+      uNoUnderscore === 'eduardosiller' ||
+      cleanU === 'eduardo' ||
+      cleanU === 'siller';
+    if (isEduardo && (cleanP === 'Chevropar#1970' || cleanP.toLowerCase() === 'chevropar#1970')) {
       const user: AppUser = {
         username: 'eduardo_siller',
         fullName: 'Ing. Eduardo Siller (Dirección General)',
@@ -643,13 +640,58 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return { success: true };
     }
 
-    // 2. Verificación en Supabase si está disponible la tabla app_users
+    // 2. Verificación tolerante para Haroldo
+    const isHaroldo =
+      cleanU === 'haroldo90' ||
+      cleanU === 'haroldo_90' ||
+      cleanU === 'haroldo-90' ||
+      uNoUnderscore === 'haroldo90' ||
+      cleanU === 'haroldo';
+    if (isHaroldo && (cleanP === 'Chevropar#1970' || cleanP.toLowerCase() === 'chevropar#1970')) {
+      const user: AppUser = {
+        username: 'haroldo90',
+        fullName: 'Haroldo (Administración General)',
+        role: 'administracion'
+      };
+      setCurrentUser(user);
+      localStorage.setItem('mallaesa_current_user', JSON.stringify(user));
+      setActiveRole('administracion');
+      return { success: true };
+    }
+
+    // 3. Verificación contra la plantilla de empleados registrados
+    const matchedEmployee = employees.find(emp => {
+      if (!emp.username || !emp.password) return false;
+      const empU = emp.username.trim().toLowerCase().replace(/\s+/g, '_');
+      const empUNo = empU.replace(/_/g, '');
+      const matchUser = empU === cleanU || empUNo === uNoUnderscore;
+      const matchPass = emp.password.trim() === cleanP;
+      return matchUser && matchPass;
+    });
+
+    if (matchedEmployee) {
+      const userRole: RoleType = matchedEmployee.assignedRole || (
+        matchedEmployee.department === 'administracion_ventas' ? 'administracion' : 'operaciones'
+      );
+      const user: AppUser = {
+        id: matchedEmployee.id,
+        username: matchedEmployee.username || cleanU,
+        fullName: matchedEmployee.fullName,
+        role: userRole
+      };
+      setCurrentUser(user);
+      localStorage.setItem('mallaesa_current_user', JSON.stringify(user));
+      setActiveRole(userRole);
+      return { success: true };
+    }
+
+    // 4. Verificación en Supabase si está disponible la tabla app_users
     try {
       const { data, error } = await supabase
         .from('app_users')
         .select('*')
-        .ilike('username', u)
-        .eq('password', p)
+        .or(`username.ilike.${cleanU},username.ilike.${uNoUnderscore}`)
+        .eq('password', cleanP)
         .maybeSingle();
 
       if (!error && data && data.status === 'activo') {
@@ -657,7 +699,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           id: data.id,
           username: data.username,
           fullName: data.full_name,
-          role: (data.role as RoleType) || 'administracion'
+          role: (data.role as RoleType) || 'operaciones'
         };
         setCurrentUser(user);
         localStorage.setItem('mallaesa_current_user', JSON.stringify(user));
@@ -1754,10 +1796,24 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ...empData,
       id: `emp-${Date.now()}`,
       hourlyRate,
-      weeklyBaseHours: empData.weeklyBaseHours || weeklyHoursLimit || 40
+      weeklyBaseHours: empData.weeklyBaseHours || weeklyHoursLimit || 40,
+      systemUrl: empData.systemUrl || 'https://mallaesa.vercel.app/'
     };
     setEmployees(prev => [newEmployee, ...prev]);
     saveToSupabase('employees', newEmployee);
+
+    if (newEmployee.username && newEmployee.password) {
+      saveToSupabase('app_users', {
+        id: `usr-${newEmployee.id}`,
+        username: newEmployee.username.trim().toLowerCase(),
+        password: newEmployee.password.trim(),
+        full_name: newEmployee.fullName,
+        role: newEmployee.assignedRole || 'operaciones',
+        phone: newEmployee.phone || '',
+        status: newEmployee.status === 'activo' ? 'activo' : 'inactivo'
+      });
+    }
+
     return newEmployee;
   };
 
@@ -1769,6 +1825,19 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         updated.hourlyRate = Number((updates.dailySalary / 8).toFixed(2));
       }
       saveToSupabase('employees', updated);
+
+      if (updated.username && updated.password) {
+        saveToSupabase('app_users', {
+          id: `usr-${updated.id}`,
+          username: updated.username.trim().toLowerCase(),
+          password: updated.password.trim(),
+          full_name: updated.fullName,
+          role: updated.assignedRole || 'operaciones',
+          phone: updated.phone || '',
+          status: updated.status === 'activo' ? 'activo' : 'inactivo'
+        });
+      }
+
       return updated;
     }));
   };
@@ -1777,6 +1846,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setEmployees(prev => prev.filter(emp => emp.id !== id));
     setAttendanceRecords(prev => prev.filter(att => att.employeeId !== id));
     deleteFromSupabase('employees', id);
+    deleteFromSupabase('app_users', `usr-${id}`);
   };
 
   // Control de Asistencia & Checador

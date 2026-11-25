@@ -64,11 +64,27 @@ const ROLES: RoleOption[] = [
   }
 ];
 
-export const RoleSelector: React.FC = () => {
+interface RoleSelectorProps {
+  onGoToLogin?: () => void;
+}
+
+export const RoleSelector: React.FC<RoleSelectorProps> = ({ onGoToLogin }) => {
   const { setActiveRole } = useMallaesa();
 
   return (
-    <div className="min-h-screen w-full bg-[#F8F9F8] flex flex-col items-center justify-center p-4 sm:p-6 md:p-10">
+    <div className="min-h-screen w-full bg-[#F8F9F8] flex flex-col items-center justify-center p-4 sm:p-6 md:p-10 relative">
+      {onGoToLogin && (
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+          <button
+            type="button"
+            onClick={onGoToLogin}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-stone-100 border border-stone-300 text-stone-700 hover:text-black rounded-xl text-xs font-bold shadow-2xs transition cursor-pointer"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-[#898A82]" />
+            <span>Acceso con Contraseña</span>
+          </button>
+        </div>
+      )}
       <div className="w-full max-w-7xl mx-auto flex flex-col items-center">
         {/* UN SOLO LOGO ARRIBA DE LOS ACCESOS (Con buen tamaño y sin encapsular) */}
         <div className="mb-8 md:mb-12 flex flex-col items-center text-center animate-fade-in">

@@ -29,7 +29,13 @@ import {
   HelpCircle,
   Sliders,
   Check,
-  X
+  X,
+  Key,
+  Copy,
+  Share2,
+  ExternalLink,
+  RefreshCw,
+  Lock
 } from 'lucide-react';
 
 interface PersonnelAttendanceViewProps {
@@ -93,8 +99,88 @@ export const PersonnelAttendanceView: React.FC<PersonnelAttendanceViewProps> = (
     hourlyRate: 62.50,
     weeklyBaseHours: 40,
     status: 'activo',
-    notes: ''
+    notes: '',
+    username: '',
+    password: '',
+    assignedRole: 'operaciones',
+    systemUrl: 'https://mallaesa.vercel.app/'
   });
+
+  // Generador de contraseñas seguras aleatorias
+  const generateRandomPassword = () => {
+    const randomPin = Math.floor(1000 + Math.random() * 9000);
+    setEmpForm(prev => ({ ...prev, password: `Mallaesa#${randomPin}` }));
+  };
+
+  // Compartir accesos por WhatsApp
+  const handleShareEmployeeAccessWhatsApp = (emp: Employee) => {
+    const roleLabels: Record<string, string> = {
+      operaciones: 'Operaciones en Campo (OTs & Cuadrillas)',
+      ventas: 'Ventas & CRM de Prospectos',
+      administracion: 'Administración y Finanzas',
+      director: 'Dirección General',
+      cotizador: 'Cotizador & Catálogo Oficial',
+      cliente: 'Portal Cliente'
+    };
+
+    const roleName = emp.assignedRole ? (roleLabels[emp.assignedRole] || emp.assignedRole) : 'Operaciones en Campo';
+    const systemLink = emp.systemUrl || 'https://mallaesa.vercel.app/';
+    const userAccess = emp.username || emp.code.toLowerCase().replace('-', '_');
+    const passAccess = emp.password || 'Mallaesa#2026';
+
+    const message = 
+`🔒 *ACCESOS AL SISTEMA OPERATIVO MALLAESA* 🔒
+
+¡Hola, *${emp.fullName}*! Te compartimos tus credenciales de acceso para la plataforma operativa de MALLAESA:
+
+🌐 *Link del Sistema:* ${systemLink}
+👤 *Usuario:* ${userAccess}
+🔑 *Contraseña:* ${passAccess}
+🏷️ *Rol Asignado:* ${roleName}
+📌 *Puesto:* ${emp.jobTitle}
+
+📲 *Instrucciones:*
+1. Ingresa al enlace: ${systemLink}
+2. Si estás en la pantalla de bienvenida, da clic en "Acceso con Contraseña" o ingresa directamente con tus credenciales.
+3. Desde tu módulo podrás registrar tu asistencia, consultar órdenes de trabajo y reportar avances.
+
+_MALLAESA Seguridad Perimetral • Soporte Operativo_`;
+
+    const encoded = encodeURIComponent(message);
+    const cleanPhone = (emp.phone || '').replace(/\D/g, '');
+    let waUrl = `https://api.whatsapp.com/send?text=${encoded}`;
+    if (cleanPhone.length >= 10) {
+      const fullPhone = cleanPhone.length === 10 ? `52${cleanPhone}` : cleanPhone;
+      waUrl = `https://api.whatsapp.com/send?phone=${fullPhone}&text=${encoded}`;
+    }
+
+    window.open(waUrl, '_blank');
+  };
+
+  // Copiar credenciales al portapapeles
+  const handleCopyCredentials = (emp: Employee) => {
+    const roleLabels: Record<string, string> = {
+      operaciones: 'Operaciones en Campo',
+      ventas: 'Ventas y CRM',
+      administracion: 'Administración y Finanzas',
+      director: 'Dirección General',
+      cotizador: 'Cotizador',
+      cliente: 'Portal Cliente'
+    };
+    const roleName = emp.assignedRole ? (roleLabels[emp.assignedRole] || emp.assignedRole) : 'Operaciones';
+    const systemLink = emp.systemUrl || 'https://mallaesa.vercel.app/';
+    const userAccess = emp.username || emp.code.toLowerCase().replace('-', '_');
+    const passAccess = emp.password || 'Mallaesa#2026';
+
+    const textToCopy = `SISTEMA MALLAESA\nLink: ${systemLink}\nUsuario: ${userAccess}\nContraseña: ${passAccess}\nRol: ${roleName}\nEmpleado: ${emp.fullName}`;
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(textToCopy);
+      alert(`¡Credenciales de ${emp.fullName} copiadas con éxito!\n\nLink: ${systemLink}\nUsuario: ${userAccess}\nContraseña: ${passAccess}`);
+    } else {
+      alert(textToCopy);
+    }
+  };
 
   // Resumen calculado semanal de LFT 40h
   const weeklySummaries = useMemo(() => {
@@ -135,6 +221,7 @@ export const PersonnelAttendanceView: React.FC<PersonnelAttendanceViewProps> = (
     setEditingEmployeeId(null);
     const nextNum = employees.length + 1;
     const code = `EMP-${String(nextNum).padStart(3, '0')}`;
+    const autoUsername = `empleado_${code.toLowerCase().replace('-', '')}`;
     setEmpForm({
       code,
       fullName: '',
@@ -159,7 +246,11 @@ export const PersonnelAttendanceView: React.FC<PersonnelAttendanceViewProps> = (
       hourlyRate: 68.75,
       weeklyBaseHours: weeklyHoursLimit || 40,
       status: 'activo',
-      notes: ''
+      notes: '',
+      username: autoUsername,
+      password: 'Mallaesa#2026',
+      assignedRole: 'operaciones',
+      systemUrl: 'https://mallaesa.vercel.app/'
     });
     setIsEmployeeModalOpen(true);
   };
@@ -187,7 +278,11 @@ export const PersonnelAttendanceView: React.FC<PersonnelAttendanceViewProps> = (
       hourlyRate: emp.hourlyRate,
       weeklyBaseHours: emp.weeklyBaseHours || 40,
       status: emp.status,
-      notes: emp.notes || ''
+      notes: emp.notes || '',
+      username: emp.username || emp.code.toLowerCase().replace('-', '_'),
+      password: emp.password || 'Mallaesa#2026',
+      assignedRole: emp.assignedRole || 'operaciones',
+      systemUrl: emp.systemUrl || 'https://mallaesa.vercel.app/'
     });
     setIsEmployeeModalOpen(true);
   };
@@ -805,6 +900,50 @@ export const PersonnelAttendanceView: React.FC<PersonnelAttendanceViewProps> = (
                   </div>
                 </div>
 
+                {/* Acceso al Sistema MALLAESA & Credenciales */}
+                <div className="mt-3 p-3 bg-stone-50 rounded-xl border border-stone-200/90 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-stone-600 flex items-center gap-1">
+                      <Key className="w-3.5 h-3.5 text-emerald-600" /> Accesos al Sistema
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-black text-white uppercase tracking-tight">
+                      {emp.assignedRole || 'operaciones'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                    <div className="bg-white p-1.5 rounded-lg border border-stone-200">
+                      <span className="text-stone-400 block text-[9px] uppercase font-sans font-bold">Usuario:</span>
+                      <span className="font-bold text-black truncate block">{emp.username || emp.code.toLowerCase().replace('-', '_')}</span>
+                    </div>
+                    <div className="bg-white p-1.5 rounded-lg border border-stone-200">
+                      <span className="text-stone-400 block text-[9px] uppercase font-sans font-bold">Clave:</span>
+                      <span className="font-bold text-stone-700 truncate block">{emp.password || 'Mallaesa#2026'}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => handleShareEmployeeAccessWhatsApp(emp)}
+                      className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.98]"
+                      title="Enviar credenciales y enlace del sistema por WhatsApp"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                      <span>WhatsApp</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyCredentials(emp)}
+                      className="py-1.5 px-2.5 bg-white hover:bg-stone-100 border border-stone-300 text-stone-700 hover:text-black rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer active:scale-[0.98]"
+                      title="Copiar datos al portapapeles"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copiar</span>
+                    </button>
+                  </div>
+                </div>
+
                 <div className="mt-3 pt-2 border-t border-stone-100 flex items-center justify-between text-[11px] text-stone-500">
                   <span className="flex items-center gap-1">
                     <Phone className="w-3 h-3 text-[#898A82]" /> {emp.phone}
@@ -1172,6 +1311,86 @@ export const PersonnelAttendanceView: React.FC<PersonnelAttendanceViewProps> = (
                     placeholder="Calle, número, colonia, municipio"
                     className="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg"
                   />
+                </div>
+              </div>
+
+              {/* SECCIÓN: ACCESO AL SISTEMA Y ASIGNACIÓN DE ROL */}
+              <div className="p-4 bg-stone-50 rounded-xl border border-stone-200/90 space-y-3">
+                <div className="flex items-center justify-between border-b border-stone-200 pb-2">
+                  <div className="flex items-center gap-2">
+                    <Key className="w-4 h-4 text-emerald-600" />
+                    <span className="font-bold text-stone-900 text-xs uppercase tracking-wider">
+                      Credenciales de Acceso & Asignación de Rol
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-stone-500 font-medium">
+                    Accesos oficiales para el empleado
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">Rol en el Sistema *</label>
+                    <select
+                      value={empForm.assignedRole || 'operaciones'}
+                      onChange={(e) => setEmpForm({ ...empForm, assignedRole: e.target.value as any })}
+                      className="w-full p-2.5 bg-white border border-stone-300 rounded-lg font-bold text-stone-900"
+                    >
+                      <option value="operaciones">Operaciones (Cuadrillas, OTs y Almacén)</option>
+                      <option value="ventas">Ventas (CRM y Presupuestos)</option>
+                      <option value="administracion">Administración y Finanzas</option>
+                      <option value="director">Dirección General</option>
+                      <option value="cotizador">Cotizador & Catálogo</option>
+                      <option value="cliente">Cliente (Portal Público)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">Nombre de Usuario *</label>
+                    <input
+                      type="text"
+                      required
+                      value={empForm.username || ''}
+                      onChange={(e) => setEmpForm({ ...empForm, username: e.target.value.toLowerCase().replace(/\s+/g, '_') })}
+                      placeholder="ej. roberto_mendoza"
+                      className="w-full p-2.5 bg-white border border-stone-300 rounded-lg font-mono font-bold text-black"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="font-bold text-stone-700">Contraseña de Acceso *</label>
+                      <button
+                        type="button"
+                        onClick={generateRandomPassword}
+                        className="text-[10px] text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-1 cursor-pointer"
+                      >
+                        <RefreshCw className="w-3 h-3" /> Generar aleatoria
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      value={empForm.password || ''}
+                      onChange={(e) => setEmpForm({ ...empForm, password: e.target.value })}
+                      placeholder="Mallaesa#2026"
+                      className="w-full p-2.5 bg-white border border-stone-300 rounded-lg font-mono font-bold text-black"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">Enlace del Sistema (URL)</label>
+                    <input
+                      type="url"
+                      required
+                      value={empForm.systemUrl || 'https://mallaesa.vercel.app/'}
+                      onChange={(e) => setEmpForm({ ...empForm, systemUrl: e.target.value })}
+                      placeholder="https://mallaesa.vercel.app/"
+                      className="w-full p-2.5 bg-white border border-stone-300 rounded-lg font-mono text-stone-700"
+                    />
+                  </div>
                 </div>
               </div>
 

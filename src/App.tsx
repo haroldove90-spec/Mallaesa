@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MallaesaProvider, useMallaesa } from './context/MallaesaContext';
 import { SplashScreen } from './components/SplashScreen';
+import { RoleSelector } from './components/RoleSelector';
 import { LoginForm } from './components/LoginForm';
 import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
@@ -22,6 +23,7 @@ import { ROLE_MODULES } from './components/Navigation';
 function DashboardContent() {
   const { activeRole, currentModule, setCurrentModule } = useMallaesa();
   const [showSplash, setShowSplash] = useState(true);
+  const [authScreen, setAuthScreen] = useState<'roles' | 'login'>('roles');
 
   // Synchronize currentModule whenever activeRole changes or if currentModule is not valid for this role
   useEffect(() => {
@@ -31,6 +33,8 @@ function DashboardContent() {
         const defaultMod = ROLE_DEFAULT_MODULE[activeRole] || 'inicio';
         setCurrentModule(defaultMod);
       }
+    } else {
+      setAuthScreen('roles');
     }
   }, [activeRole, currentModule]);
 
@@ -41,9 +45,13 @@ function DashboardContent() {
         <SplashScreen onFinish={() => setShowSplash(false)} />
       )}
 
-      {/* Formulario de Acceso Oficial MALLAESA */}
+      {/* Pantalla Principal: Selector de Roles por defecto o Formulario de Acceso */}
       {!activeRole ? (
-        <LoginForm />
+        authScreen === 'login' ? (
+          <LoginForm onBackToRoles={() => setAuthScreen('roles')} />
+        ) : (
+          <RoleSelector onGoToLogin={() => setAuthScreen('login')} />
+        )
       ) : activeRole === 'pagina_web' ? (
         /* Rol Página Web: Sitio Oficial www.mallaesa.com a pantalla completa con navegación responsiva propia */
         <WebsitePortal

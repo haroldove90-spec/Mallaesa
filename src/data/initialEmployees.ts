@@ -26,6 +26,10 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     hourlyRate: 81.25, // $650 / 8 hrs = $81.25
     weeklyBaseHours: 40,
     status: 'activo',
+    username: 'roberto_mendoza',
+    password: 'Mallaesa#2026',
+    assignedRole: 'operaciones',
+    systemUrl: 'https://mallaesa.vercel.app/',
     notes: 'Experto en tensión de malla ciclónica, postes de 60mm y coronación con concertina arpón.'
   },
   {
@@ -53,6 +57,10 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     hourlyRate: 56.25,
     weeklyBaseHours: 40,
     status: 'activo',
+    username: 'carlos_tellez',
+    password: 'Mallaesa#2026',
+    assignedRole: 'operaciones',
+    systemUrl: 'https://mallaesa.vercel.app/',
     notes: 'Excavación, anclaje de retenidas, fijación de abrazaderas y trenzado de alambre.'
   },
   {
@@ -80,6 +88,10 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     hourlyRate: 77.50,
     weeklyBaseHours: 40,
     status: 'activo',
+    username: 'eduardo_valenzuela',
+    password: 'Mallaesa#2026',
+    assignedRole: 'operaciones',
+    systemUrl: 'https://mallaesa.vercel.app/',
     notes: 'Montaje de paneles electrosoldados de rejacero, nivelación de postes con placa base y anclaje químico.'
   },
   {
@@ -107,6 +119,10 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     hourlyRate: 56.25,
     weeklyBaseHours: 40,
     status: 'activo',
+    username: 'manuel_rios',
+    password: 'Mallaesa#2026',
+    assignedRole: 'operaciones',
+    systemUrl: 'https://mallaesa.vercel.app/',
     notes: 'Operación de rotomartillos industriales, taladro sacanúcleos y colado de concreto hidráulico.'
   },
   {
@@ -134,6 +150,10 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     hourlyRate: 85.00,
     weeklyBaseHours: 40,
     status: 'activo',
+    username: 'ignacio_zuniga',
+    password: 'Mallaesa#2026',
+    assignedRole: 'operaciones',
+    systemUrl: 'https://mallaesa.vercel.app/',
     notes: 'Fabricación y soldadura de portones vehiculares abatibles y corredizos con riel de carga pesada.'
   },
   {
@@ -161,6 +181,10 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     hourlyRate: 60.00,
     weeklyBaseHours: 40,
     status: 'activo',
+    username: 'fernando_carrillo',
+    password: 'Mallaesa#2026',
+    assignedRole: 'operaciones',
+    systemUrl: 'https://mallaesa.vercel.app/',
     notes: 'Soldadura de microalambre MIG/MAG y electrodo 6013 para marcos tubulares y bisagras reforzadas.'
   },
   {
@@ -187,6 +211,10 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     hourlyRate: 68.75,
     weeklyBaseHours: 40,
     status: 'activo',
+    username: 'hector_garza',
+    password: 'Mallaesa#2026',
+    assignedRole: 'operaciones',
+    systemUrl: 'https://mallaesa.vercel.app/',
     notes: 'Recepción y despacho de rollos de acero, tubería galvanizada y concertina en Almacén Central.'
   },
   {
@@ -213,6 +241,10 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     hourlyRate: 62.50,
     weeklyBaseHours: 40,
     status: 'activo',
+    username: 'javier_ramos',
+    password: 'Mallaesa#2026',
+    assignedRole: 'operaciones',
+    systemUrl: 'https://mallaesa.vercel.app/',
     notes: 'Licencia federal tipo B para transporte de material en plataformas de 3.5 y 5 toneladas.'
   }
 ];

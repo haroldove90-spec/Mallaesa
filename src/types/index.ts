@@ -432,6 +432,10 @@ export interface Employee {
   status: 'activo' | 'vacaciones' | 'incapacidad' | 'baja';
   photoUrl?: string;
   notes?: string;
+  username?: string;
+  password?: string;
+  assignedRole?: RoleType;
+  systemUrl?: string;
 }
 
 export type AttendanceStatus =

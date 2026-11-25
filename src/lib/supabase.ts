@@ -234,10 +234,20 @@ CREATE TABLE IF NOT EXISTS public.employees (
     weekly_base_hours NUMERIC DEFAULT 40,
     status TEXT DEFAULT 'activo',
     notes TEXT,
+    username TEXT,
+    password TEXT,
+    assigned_role TEXT DEFAULT 'operaciones',
+    system_url TEXT DEFAULT 'https://mallaesa.vercel.app/',
     raw_data JSONB,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Asegurar columnas si la tabla ya existía previamente en Supabase
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS username TEXT;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS password TEXT;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS assigned_role TEXT DEFAULT 'operaciones';
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS system_url TEXT DEFAULT 'https://mallaesa.vercel.app/';
 
 -- 3. CONTROL DE ASISTENCIA & HORAS EXTRAS (LEY 40 HORAS)
 CREATE TABLE IF NOT EXISTS public.attendance_records (
