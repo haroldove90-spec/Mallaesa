@@ -94,27 +94,139 @@ export async function saveAppSettingsToSupabase(settings: {
 }
 
 /**
- * Guardar o actualizar un registro en Supabase con payload completo y raw_data
+ * Transforma y sanitiza un registro para que coincida exactamente con las columnas de PostgreSQL en Supabase
  */
-export async function saveToSupabase(tableName: string, record: any): Promise<boolean> {
-  if (!record || !record.id) return false;
-  try {
-    const payload = {
+export function formatPayloadForSupabase(tableName: string, record: any): any {
+  if (!record || !record.id) return record;
+
+  if (tableName === 'app_users') {
+    return {
       id: String(record.id),
-      ...record,
+      username: String(record.username || '').trim().toLowerCase(),
+      password: String(record.password || '').trim(),
+      full_name: String(record.full_name || record.fullName || '').trim(),
+      role: String(record.role || record.assignedRole || 'operaciones'),
+      status: String(record.status || 'activo'),
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  if (tableName === 'employees') {
+    return {
+      id: String(record.id),
+      code: record.code || '',
+      full_name: record.fullName || record.full_name || '',
+      curp: record.curp || '',
+      rfc: record.rfc || '',
+      nss: record.nss || '',
+      phone: record.phone || '',
+      email: record.email || '',
+      address: record.address || '',
+      birth_date: record.birthDate || record.birth_date || '',
+      blood_type: record.bloodType || record.blood_type || '',
+      emergency_contact: record.emergencyContact || record.emergency_contact || null,
+      job_title: record.jobTitle || record.job_title || '',
+      department: record.department || 'instalacion_campo',
+      assigned_crew: record.assignedCrew || record.assigned_crew || '',
+      hire_date: record.hireDate || record.hire_date || '',
+      daily_salary: Number(record.dailySalary ?? record.daily_salary ?? 0),
+      hourly_rate: Number(record.hourlyRate ?? record.hourly_rate ?? 0),
+      weekly_base_hours: Number(record.weeklyBaseHours ?? record.weekly_base_hours ?? 40),
+      status: record.status || 'activo',
+      notes: record.notes || '',
+      username: record.username ? String(record.username).trim().toLowerCase() : '',
+      password: record.password ? String(record.password).trim() : '',
+      assigned_role: record.assignedRole || record.assigned_role || 'operaciones',
+      system_url: record.systemUrl || record.system_url || 'https://mallaesa.vercel.app/',
       raw_data: record,
       updated_at: new Date().toISOString()
     };
-    const { error } = await supabase.from(tableName).upsert(payload, { onConflict: 'id' });
-    if (error) {
-      console.warn(`[Supabase] Error al guardar en ${tableName}:`, error.message);
+  }
+
+  if (tableName === 'attendance_records') {
+    return {
+      id: String(record.id),
+      employee_id: record.employeeId || record.employee_id || '',
+      employee_name: record.employeeName || record.employee_name || '',
+      date: record.date || '',
+      check_in: record.checkIn || record.check_in || '',
+      check_out: record.checkOut || record.check_out || '',
+      lunch_minutes: Number(record.lunchMinutes ?? record.lunch_minutes ?? 60),
+      status: record.status || 'presente',
+      hours_worked: Number(record.hoursWorked ?? record.hours_worked ?? 8),
+      overtime_hours: Number(record.overtimeHours ?? record.overtime_hours ?? 0),
+      location_or_project: record.locationOrProject || record.location_or_project || '',
+      notes: record.notes || '',
+      verified_by: record.verifiedBy || record.verified_by || '',
+      raw_data: record,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  return {
+    id: String(record.id),
+    ...record,
+    raw_data: record,
+    updated_at: new Date().toISOString()
+  };
+}
+
+/**
+ * Guardar o actualizar un registro en Supabase con auto-recuperación ante columnas faltantes en schema cache
+ */
+export async function saveToSupabase(tableName: string, record: any): Promise<boolean> {
+  if (!record || !record.id) return false;
+
+  let payload = formatPayloadForSupabase(tableName, record);
+
+  // Reintentos auto-reparadores si Supabase carece de alguna columna en su tabla remota
+  for (let attempt = 0; attempt < 15; attempt++) {
+    try {
+      const { error } = await supabase.from(tableName).upsert(payload, { onConflict: 'id' });
+      if (!error) {
+        return true;
+      }
+
+      console.warn(`[Supabase] Intento ${attempt + 1} en ${tableName}:`, error.message);
+
+      // Detectar nombres de columna faltantes en el schema cache de PostgREST o en PostgreSQL:
+      // Ej 1: "Could not find the 'assignedCrew' column of 'employees' in the schema cache"
+      // Ej 2: 'column "assigned_crew" of relation "employees" does not exist'
+      // Ej 3: "column 'phone' does not exist"
+      const match =
+        error.message.match(/Could not find the '([^']+)' column/i) ||
+        error.message.match(/column "([^"]+)" (?:of relation )?does not exist/i) ||
+        error.message.match(/column '([^']+)' does not exist/i) ||
+        error.message.match(/column "([^"]+)" does not exist/i);
+
+      if (match && match[1]) {
+        const missingCol = match[1];
+        delete payload[missingCol];
+        continue;
+      }
+
+      // Si el error es por una clave foránea o campo no mapeado y llevamos varios intentos:
+      if (attempt >= 8 && tableName !== 'app_users') {
+        // Reducir payload a lo elemental: id, code, full_name, status si existen
+        payload = {
+          id: String(record.id),
+          updated_at: new Date().toISOString()
+        };
+        if (record.fullName || record.full_name) payload.full_name = record.fullName || record.full_name;
+        if (record.code) payload.code = record.code;
+        if (record.username) payload.username = String(record.username).trim().toLowerCase();
+        if (record.password) payload.password = String(record.password).trim();
+        continue;
+      }
+
+      return false;
+    } catch (err: any) {
+      console.warn(`[Supabase] Excepción en ${tableName}:`, err.message);
       return false;
     }
-    return true;
-  } catch (err: any) {
-    console.warn(`[Supabase] Excepción al guardar en ${tableName}:`, err.message);
-    return false;
   }
+
+  return false;
 }
 
 /**
@@ -153,17 +265,56 @@ export async function clearTableInSupabase(tableName: string): Promise<boolean> 
 }
 
 /**
- * Obtener todos los registros de una tabla en Supabase
+ * Obtener todos los registros de una tabla en Supabase con mapeo seguro a modelos TypeScript
  */
 export async function fetchFromSupabase<T = any>(tableName: string): Promise<T[] | null> {
   try {
-    const { data, error } = await supabase.from(tableName).select('*').order('created_at', { ascending: false });
-    if (error) {
+    let result = await supabase.from(tableName).select('*').order('created_at', { ascending: false });
+    if (result.error) {
+      // Si la tabla no tiene la columna created_at en Supabase, consultar sin order
+      result = await supabase.from(tableName).select('*');
+    }
+    if (result.error) {
+      console.warn(`[Supabase] Error al consultar tabla ${tableName}:`, result.error.message);
       return null;
     }
+    const data = result.data;
     if (!data) return [];
-    // Si viene con raw_data, restaurar el objeto original con todos los campos tipados
-    return data.map((row: any) => (row.raw_data ? { ...row.raw_data, ...row } : row)) as T[];
+
+    return data.map((row: any) => {
+      const raw = row.raw_data || {};
+      if (tableName === 'employees') {
+        return {
+          ...raw,
+          id: row.id,
+          code: row.code || raw.code || '',
+          fullName: raw.fullName || row.full_name || '',
+          curp: row.curp || raw.curp || '',
+          rfc: row.rfc || raw.rfc || '',
+          nss: row.nss || raw.nss || '',
+          phone: row.phone || raw.phone || '',
+          email: row.email || raw.email || '',
+          address: row.address || raw.address || '',
+          birthDate: raw.birthDate || row.birth_date || '',
+          bloodType: raw.bloodType || raw.blood_type || 'O+',
+          emergencyContact: raw.emergencyContact || row.emergency_contact || { name: '', relationship: '', phone: '' },
+          jobTitle: raw.jobTitle || row.job_title || '',
+          department: raw.department || row.department || 'instalacion_campo',
+          assignedCrew: raw.assignedCrew || row.assigned_crew || '',
+          hireDate: raw.hireDate || row.hire_date || '',
+          dailySalary: Number(raw.dailySalary ?? row.daily_salary ?? 0),
+          hourlyRate: Number(raw.hourlyRate ?? row.hourly_rate ?? 0),
+          weeklyBaseHours: Number(raw.weeklyBaseHours ?? row.weekly_base_hours ?? 40),
+          status: row.status || raw.status || 'activo',
+          notes: row.notes || raw.notes || '',
+          username: row.username || raw.username || '',
+          password: row.password || raw.password || '',
+          assignedRole: row.assigned_role || raw.assignedRole || 'operaciones',
+          systemUrl: row.system_url || raw.systemUrl || 'https://mallaesa.vercel.app/'
+        };
+      }
+      return (row.raw_data ? { ...row.raw_data, ...row } : row);
+    }) as T[];
   } catch {
     return null;
   }
@@ -186,10 +337,17 @@ CREATE TABLE IF NOT EXISTS public.app_users (
     password TEXT NOT NULL,
     full_name TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'administracion',
+    phone TEXT,
     status TEXT DEFAULT 'activo',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Asegurar columnas si la tabla app_users ya existía previamente en Supabase
+ALTER TABLE public.app_users ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE public.app_users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'operaciones';
+ALTER TABLE public.app_users ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'activo';
+ALTER TABLE public.app_users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
 -- Insertar las credenciales oficiales de acceso
 INSERT INTO public.app_users (id, username, password, full_name, role, status)
@@ -243,11 +401,34 @@ CREATE TABLE IF NOT EXISTS public.employees (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Asegurar columnas si la tabla ya existía previamente en Supabase
+-- Asegurar todas las columnas si la tabla employees ya existía previamente en Supabase
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS code TEXT;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS full_name TEXT;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS curp TEXT;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS rfc TEXT;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS nss TEXT;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS birth_date TEXT;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS blood_type TEXT;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS emergency_contact JSONB;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS job_title TEXT;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS department TEXT;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS assigned_crew TEXT;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS hire_date TEXT;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS daily_salary NUMERIC DEFAULT 0;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS hourly_rate NUMERIC DEFAULT 0;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS weekly_base_hours NUMERIC DEFAULT 40;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'activo';
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS notes TEXT;
 ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS username TEXT;
 ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS password TEXT;
 ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS assigned_role TEXT DEFAULT 'operaciones';
 ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS system_url TEXT DEFAULT 'https://mallaesa.vercel.app/';
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS raw_data JSONB;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
 -- 3. CONTROL DE ASISTENCIA & HORAS EXTRAS (LEY 40 HORAS)
 CREATE TABLE IF NOT EXISTS public.attendance_records (

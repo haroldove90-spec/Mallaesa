@@ -560,8 +560,54 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         fetchFromSupabase<QuoteRequest>('quote_requests')
       ]);
 
-      if (remoteEmployees !== null && (remoteEmployees.length > 0 || isSampleCleared)) {
-        setEmployees(remoteEmployees);
+      if (remoteEmployees !== null) {
+        if (remoteEmployees.length > 0) {
+          setEmployees(prevLocal => {
+            const remoteIds = new Set(remoteEmployees.map(e => e.id));
+            const unsynced = prevLocal.filter(e => !remoteIds.has(e.id));
+            if (unsynced.length > 0) {
+              // Subir a Supabase los empleados locales que aún no estaban en la nube
+              unsynced.forEach(emp => {
+                saveToSupabase('employees', emp);
+                if (emp.username && emp.password) {
+                  saveToSupabase('app_users', {
+                    id: `usr-${emp.id}`,
+                    username: emp.username.trim().toLowerCase(),
+                    password: emp.password.trim(),
+                    full_name: emp.fullName,
+                    role: emp.assignedRole || 'operaciones',
+                    status: emp.status === 'activo' ? 'activo' : 'inactivo'
+                  });
+                }
+              });
+              return [...remoteEmployees, ...unsynced];
+            }
+            return remoteEmployees;
+          });
+        } else if (isSampleCleared) {
+          // Si Supabase devuelve 0 empleados y se limpiaron muestras,
+          // verificamos si en local el usuario ya había agregado algún empleado real
+          setEmployees(prevLocal => {
+            if (prevLocal.length > 0) {
+              // El usuario tiene empleados reales locales, los sincronizamos a Supabase de inmediato
+              prevLocal.forEach(emp => {
+                saveToSupabase('employees', emp);
+                if (emp.username && emp.password) {
+                  saveToSupabase('app_users', {
+                    id: `usr-${emp.id}`,
+                    username: emp.username.trim().toLowerCase(),
+                    password: emp.password.trim(),
+                    full_name: emp.fullName,
+                    role: emp.assignedRole || 'operaciones',
+                    status: emp.status === 'activo' ? 'activo' : 'inactivo'
+                  });
+                }
+              });
+              return prevLocal;
+            }
+            return [];
+          });
+        }
       }
       if (remoteAttendance !== null && (remoteAttendance.length > 0 || isSampleCleared)) {
         setAttendanceRecords(remoteAttendance);
@@ -661,7 +707,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return { success: true };
     }
 
-    // 3. Verificación contra la plantilla de empleados registrados
+    // 3. Verificación contra la plantilla de empleados registrados en memoria
     const matchedEmployee = employees.find(emp => {
       if (!emp.username || !emp.password) return false;
       const empU = emp.username.trim().toLowerCase().replace(/\s+/g, '_');
@@ -687,7 +733,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return { success: true };
     }
 
-    // 4. Verificación en Supabase si está disponible la tabla app_users
+    // 4. Verificación en Supabase: tabla app_users
     try {
       const { data, error } = await supabase
         .from('app_users')
@@ -709,7 +755,64 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return { success: true };
       }
     } catch (err) {
-      console.warn('[Auth] Error al verificar credenciales en Supabase:', err);
+      console.warn('[Auth] Error al verificar credenciales en app_users:', err);
+    }
+
+    // 5. Verificación de respaldo directa en tabla employees de Supabase
+    try {
+      let empRows: any[] | null = null;
+      const directQuery = await supabase
+        .from('employees')
+        .select('*')
+        .or(`username.ilike.${cleanU},username.ilike.${uNoUnderscore}`);
+
+      if (!directQuery.error && directQuery.data && directQuery.data.length > 0) {
+        empRows = directQuery.data;
+      } else {
+        const allQuery = await supabase.from('employees').select('*').limit(50);
+        if (!allQuery.error && allQuery.data) {
+          empRows = allQuery.data;
+        }
+      }
+
+      if (empRows && empRows.length > 0) {
+        const found = empRows.find((r: any) => {
+          const raw = r.raw_data || {};
+          const u1 = String(r.username || raw.username || '').trim().toLowerCase().replace(/\s+/g, '_');
+          const p1 = String(r.password || raw.password || '').trim();
+          const matchU = u1 === cleanU || u1.replace(/_/g, '') === uNoUnderscore;
+          const matchP = p1 === cleanP;
+          return matchU && matchP;
+        });
+
+        if (found) {
+          const raw = found.raw_data || {};
+          const userRole = (found.assigned_role || raw.assignedRole || 'operaciones') as RoleType;
+          const user: AppUser = {
+            id: found.id,
+            username: found.username || raw.username || cleanU,
+            fullName: found.full_name || raw.fullName || 'Colaborador MALLAESA',
+            role: userRole
+          };
+          setCurrentUser(user);
+          localStorage.setItem('mallaesa_current_user', JSON.stringify(user));
+          setActiveRole(userRole);
+
+          // Asegurar que quede en app_users para la próxima
+          saveToSupabase('app_users', {
+            id: `usr-${found.id}`,
+            username: user.username,
+            password: cleanP,
+            full_name: user.fullName,
+            role: userRole,
+            status: 'activo'
+          });
+
+          return { success: true };
+        }
+      }
+    } catch (err) {
+      console.warn('[Auth] Error al verificar credenciales en employees de Supabase:', err);
     }
 
     return {
@@ -1811,7 +1914,6 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         password: newEmployee.password.trim(),
         full_name: newEmployee.fullName,
         role: newEmployee.assignedRole || 'operaciones',
-        phone: newEmployee.phone || '',
         status: newEmployee.status === 'activo' ? 'activo' : 'inactivo'
       });
     }
@@ -1835,7 +1937,6 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           password: updated.password.trim(),
           full_name: updated.fullName,
           role: updated.assignedRole || 'operaciones',
-          phone: updated.phone || '',
           status: updated.status === 'activo' ? 'activo' : 'inactivo'
         });
       }
