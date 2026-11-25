@@ -13,10 +13,12 @@ import {
   ChevronRight,
   Shield,
   UserCheck,
-  DollarSign
+  DollarSign,
+  UserPlus
 } from 'lucide-react';
 import { QuoteHistoryView } from '../../components/QuoteHistoryView';
 import { PurchaseOrdersView } from '../../components/PurchaseOrdersView';
+import { PersonnelRegistrationView } from '../../components/PersonnelRegistrationView';
 
 export const DirectorDashboard: React.FC<{
   activeModule: string;
@@ -86,7 +88,7 @@ export const DirectorDashboard: React.FC<{
     setDirectorNotesInput('');
   };
 
-  const validModules = ['kpis', 'aprobaciones', 'financiero', 'historial', 'ordenes_compra'];
+  const validModules = ['kpis', 'registro_personal', 'aprobaciones', 'financiero', 'historial', 'ordenes_compra'];
   const resolvedTab = validModules.includes(activeModule) ? activeModule : 'kpis';
 
   return (
@@ -95,10 +97,11 @@ export const DirectorDashboard: React.FC<{
       <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-stone-200">
         {[
           { id: 'kpis', label: '1. Supervisión Ejecutiva & KPIs', icon: <TrendingUp className="w-4 h-4 text-emerald-600" /> },
-          { id: 'aprobaciones', label: `2. Aprobaciones (${pendingApprovals.length})`, icon: <CheckCircle2 className="w-4 h-4 text-amber-600" /> },
-          { id: 'ordenes_compra', label: '3. Órdenes de Compra (OC)', icon: <Building2 className="w-4 h-4 text-blue-600" /> },
-          { id: 'financiero', label: '4. Reportes Financieros', icon: <DollarSign className="w-4 h-4 text-purple-600" /> },
-          { id: 'historial', label: `5. Historial (${formalQuotes.length})`, icon: <Clock className="w-4 h-4" /> }
+          { id: 'registro_personal', label: `2. Registro de Personal (${employees.length})`, icon: <UserPlus className="w-4 h-4 text-emerald-600" /> },
+          { id: 'aprobaciones', label: `3. Aprobaciones (${pendingApprovals.length})`, icon: <CheckCircle2 className="w-4 h-4 text-amber-600" /> },
+          { id: 'ordenes_compra', label: '4. Órdenes de Compra (OC)', icon: <Building2 className="w-4 h-4 text-blue-600" /> },
+          { id: 'financiero', label: '5. Reportes Financieros', icon: <DollarSign className="w-4 h-4 text-purple-600" /> },
+          { id: 'historial', label: `6. Historial (${formalQuotes.length})`, icon: <Clock className="w-4 h-4" /> }
         ].map((tab) => {
           const isActive = resolvedTab === tab.id;
           return (
@@ -735,6 +738,11 @@ export const DirectorDashboard: React.FC<{
             </div>
           </div>
         </div>
+      )}
+
+      {/* MÓDULO: REGISTRO DE PERSONAL & ROLES */}
+      {resolvedTab === 'registro_personal' && (
+        <PersonnelRegistrationView />
       )}
 
       {/* MÓDULO: HISTORIAL DE COTIZACIONES OFICIALES */}

@@ -32,7 +32,8 @@ import {
   TrendingUp,
   Truck,
   Building2,
-  UserCheck
+  UserCheck,
+  UserPlus
 } from 'lucide-react';
 
 export interface NavItem {
@@ -62,6 +63,7 @@ export const ROLE_MODULES: Record<RoleType, NavItem[]> = {
   ],
   director: [
     { id: 'kpis', label: 'Dashboard Ejecutivo (Dirección)', icon: <BarChart3 className="w-5 h-5" /> },
+    { id: 'registro_personal', label: 'Registro de Personal & Roles', icon: <UserPlus className="w-5 h-5 text-emerald-600" /> },
     { id: 'ordenes_compra', label: 'Órdenes de Compra (OC)', icon: <ShoppingCart className="w-5 h-5" /> },
     { id: 'historial', label: 'Historial de Cotizaciones', icon: <History className="w-5 h-5" /> },
     { id: 'aprobaciones', label: 'Aprobaciones Clave', icon: <CheckSquare className="w-5 h-5" /> },
@@ -84,6 +86,7 @@ export const ROLE_MODULES: Record<RoleType, NavItem[]> = {
     { id: 'campo', label: 'Bitácora & Firmas de Campo', icon: <Camera className="w-5 h-5" /> }
   ],
   administracion: [
+    { id: 'registro_personal', label: 'Registro de Personal & Roles', icon: <UserPlus className="w-5 h-5 text-emerald-600" /> },
     { id: 'cuentas', label: 'Cuentas por Cobrar', icon: <Receipt className="w-5 h-5" /> },
     { id: 'cuentas_pagar', label: 'Cuentas por Pagar (CxP)', icon: <CreditCard className="w-5 h-5" /> },
     { id: 'proveedores', label: 'Catálogo de Proveedores', icon: <Building2 className="w-5 h-5" /> },

@@ -21,9 +21,10 @@ import { ROLE_DEFAULT_MODULE } from './types';
 import { ROLE_MODULES } from './components/Navigation';
 
 function DashboardContent() {
-  const { activeRole, currentModule, setCurrentModule } = useMallaesa();
+  const { activeRole, currentModule, setCurrentModule, currentUser, setActiveRole } = useMallaesa();
   const [showSplash, setShowSplash] = useState(true);
-  const [authScreen, setAuthScreen] = useState<'roles' | 'login'>('roles');
+
+  const isAdmin = currentUser?.role === 'director' || currentUser?.username === 'eduardo_siller' || currentUser?.username === 'haroldo90';
 
   // Synchronize currentModule whenever activeRole changes or if currentModule is not valid for this role
   useEffect(() => {
@@ -33,25 +34,22 @@ function DashboardContent() {
         const defaultMod = ROLE_DEFAULT_MODULE[activeRole] || 'inicio';
         setCurrentModule(defaultMod);
       }
-    } else {
-      setAuthScreen('roles');
     }
   }, [activeRole, currentModule]);
 
   return (
     <>
-      {/* Splash Screen sin encapsular logos */}
+      {/* Splash Screen */}
       {showSplash && (
         <SplashScreen onFinish={() => setShowSplash(false)} />
       )}
 
-      {/* Pantalla Principal: Selector de Roles por defecto o Formulario de Acceso */}
-      {!activeRole ? (
-        authScreen === 'login' ? (
-          <LoginForm onBackToRoles={() => setAuthScreen('roles')} />
-        ) : (
-          <RoleSelector onGoToLogin={() => setAuthScreen('login')} />
-        )
+      {/* Si no está autenticado, la ÚNICA pantalla de entrada es el formulario de acceso */}
+      {!currentUser ? (
+        <LoginForm />
+      ) : (!activeRole && isAdmin) ? (
+        /* Solo el admin (Director general / gerencia) puede navegar y ver el selector de roles */
+        <RoleSelector onBackToAdmin={() => setActiveRole('director')} />
       ) : activeRole === 'pagina_web' ? (
         /* Rol Página Web: Sitio Oficial www.mallaesa.com a pantalla completa con navegación responsiva propia */
         <WebsitePortal

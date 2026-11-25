@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useMallaesa } from '../context/MallaesaContext';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { DataManagementModal } from './DataManagementModal';
-import { Download, LogOut, Database, UserCheck, Smartphone } from 'lucide-react';
+import { Download, LogOut, Database, UserCheck, Smartphone, Shield, ChevronDown } from 'lucide-react';
+import { RoleType } from '../types';
 
 const ROLE_LABELS: Record<string, { title: string; badge: string }> = {
   pagina_web: {
@@ -41,6 +42,7 @@ export const Header: React.FC = () => {
   const [showDataModal, setShowDataModal] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
 
+  const isAdmin = currentUser?.role === 'director' || currentUser?.username === 'eduardo_siller' || currentUser?.username === 'haroldo90';
   const roleInfo = activeRole ? ROLE_LABELS[activeRole] : null;
 
   const handleInstallClick = async () => {
@@ -58,12 +60,16 @@ export const Header: React.FC = () => {
       <header className="sticky top-0 z-30 w-full bg-white border-b border-stone-200 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-18">
-            {/* Logotipo del Sistema */}
+            {/* Logotipo del Sistema (Click para cambiar rol SOLO para admin) */}
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setActiveRole(null)}
-                className="flex items-center gap-2 group cursor-pointer focus:outline-hidden"
-                title="Ir a selector de roles"
+                onClick={() => {
+                  if (isAdmin) {
+                    setActiveRole(null);
+                  }
+                }}
+                className={`flex items-center gap-2 group ${isAdmin ? 'cursor-pointer' : 'cursor-default'} focus:outline-hidden`}
+                title={isAdmin ? 'Menú de roles (Acceso Administrador)' : 'MALLAESA Seguridad Perimetral'}
               >
                 <img
                   src="https://appdesignproyectos.com/mallaesalogo.png"
@@ -73,19 +79,45 @@ export const Header: React.FC = () => {
               </button>
             </div>
 
-            {/* Identificación del Rol Activo y Usuario */}
-            {roleInfo && (
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-stone-100 border border-stone-200">
-                <UserCheck className="w-4 h-4 text-[#898A82]" />
-                <div className="text-left">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block leading-tight">
-                    {currentUser ? currentUser.username : roleInfo.badge}
+            {/* Selector de Rol Exclusivo para Administrador / Dirección */}
+            {isAdmin ? (
+              <div className="flex items-center gap-2 bg-stone-50 hover:bg-stone-100 border border-stone-300 rounded-xl px-2.5 py-1.5 transition">
+                <Shield className="w-4 h-4 text-emerald-600 shrink-0" />
+                <div className="flex flex-col text-left">
+                  <span className="text-[9px] font-extrabold uppercase tracking-wider text-emerald-800 leading-tight">
+                    Navegación Admin
                   </span>
-                  <span className="text-xs font-bold text-black block leading-tight">
-                    {currentUser ? currentUser.fullName : roleInfo.title}
-                  </span>
+                  <select
+                    value={activeRole || 'director'}
+                    onChange={(e) => setActiveRole(e.target.value as RoleType)}
+                    className="bg-transparent font-bold text-black text-xs cursor-pointer focus:outline-hidden pr-2"
+                    title="Navegar a cualquier rol del sistema (Exclusivo Administrador)"
+                  >
+                    <option value="director">Dirección General (Eduardo Siller)</option>
+                    <option value="administracion">Administración & Finanzas</option>
+                    <option value="operaciones">Operaciones en Campo</option>
+                    <option value="ventas">Ventas & CRM</option>
+                    <option value="cotizador">Cotizador & Catálogo</option>
+                    <option value="cliente">Portal Cliente</option>
+                    <option value="pagina_web">Sitio Web Oficial</option>
+                  </select>
                 </div>
               </div>
+            ) : (
+              /* Identificación del Rol Activo y Empleado (Fijo, sin posibilidad de cambiar rol) */
+              roleInfo && (
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-stone-100 border border-stone-200">
+                  <UserCheck className="w-4 h-4 text-[#898A82]" />
+                  <div className="text-left">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block leading-tight">
+                      {currentUser ? currentUser.username : roleInfo.badge}
+                    </span>
+                    <span className="text-xs font-bold text-black block leading-tight">
+                      {currentUser ? currentUser.fullName : roleInfo.title}
+                    </span>
+                  </div>
+                </div>
+              )
             )}
 
             {/* Acciones del Encabezado */}

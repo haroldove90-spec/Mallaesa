@@ -20,12 +20,14 @@ import {
   Eye,
   Check,
   UserCheck,
-  Users
+  Users,
+  UserPlus
 } from 'lucide-react';
 import { AccountsPayableView } from '../../components/AccountsPayableView';
 import { SimpleReceiptsView } from '../../components/SimpleReceiptsView';
 import { SuppliersView } from '../../components/SuppliersView';
 import { PersonnelAttendanceView } from '../../components/PersonnelAttendanceView';
+import { PersonnelRegistrationView } from '../../components/PersonnelRegistrationView';
 
 export const AdminPortal: React.FC<{
   activeModule: string;
@@ -45,8 +47,8 @@ export const AdminPortal: React.FC<{
     attendanceRecords
   } = useMallaesa();
 
-  const validModules = ['cuentas', 'cuentas_pagar', 'proveedores', 'recibos', 'facturas', 'personal_asistencia', 'gastos'];
-  const resolvedTab = validModules.includes(activeModule) ? activeModule : 'cuentas';
+  const validModules = ['registro_personal', 'cuentas', 'cuentas_pagar', 'proveedores', 'recibos', 'facturas', 'personal_asistencia', 'gastos'];
+  const resolvedTab = validModules.includes(activeModule) ? activeModule : (activeModule === 'personal_asistencia' ? 'personal_asistencia' : 'registro_personal');
 
   // Modal / Inputs for Advance Payment
   const [selectedProjectIdForAdvance, setSelectedProjectIdForAdvance] = useState<string>('');
@@ -188,13 +190,14 @@ export const AdminPortal: React.FC<{
       {/* Barra de Pestañas Rápidas Administrativas */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-stone-200">
         {[
-          { id: 'cuentas', label: '1. Cuentas por Cobrar (CxC)', icon: <Receipt className="w-4 h-4 text-emerald-600" /> },
-          { id: 'cuentas_pagar', label: '2. Cuentas por Pagar (CxP)', icon: <CreditCard className="w-4 h-4 text-blue-600" /> },
-          { id: 'proveedores', label: '3. Proveedores & Crédito', icon: <Building2 className="w-4 h-4 text-purple-600" /> },
-          { id: 'recibos', label: '4. Recibos Simples (Sin Factura)', icon: <FileText className="w-4 h-4" /> },
-          { id: 'facturas', label: '5. Facturación CFDI 4.0', icon: <FileCheck2 className="w-4 h-4" /> },
-          { id: 'personal_asistencia', label: `6. Personal & Asistencia 40h (${employees.length})`, icon: <UserCheck className="w-4 h-4 text-emerald-600" /> },
-          { id: 'gastos', label: '7. Nómina & Gastos', icon: <Wallet className="w-4 h-4" /> }
+          { id: 'registro_personal', label: `1. Registro de Personal (${employees.length})`, icon: <UserPlus className="w-4 h-4 text-emerald-600" /> },
+          { id: 'cuentas', label: '2. Cuentas por Cobrar (CxC)', icon: <Receipt className="w-4 h-4 text-emerald-600" /> },
+          { id: 'cuentas_pagar', label: '3. Cuentas por Pagar (CxP)', icon: <CreditCard className="w-4 h-4 text-blue-600" /> },
+          { id: 'proveedores', label: '4. Proveedores & Crédito', icon: <Building2 className="w-4 h-4 text-purple-600" /> },
+          { id: 'recibos', label: '5. Recibos Simples (Sin Factura)', icon: <FileText className="w-4 h-4" /> },
+          { id: 'facturas', label: '6. Facturación CFDI 4.0', icon: <FileCheck2 className="w-4 h-4" /> },
+          { id: 'personal_asistencia', label: '7. Asistencia & Horas Extras 40h', icon: <UserCheck className="w-4 h-4 text-emerald-600" /> },
+          { id: 'gastos', label: '8. Nómina & Gastos', icon: <Wallet className="w-4 h-4" /> }
         ].map((tab) => {
           const isActive = resolvedTab === tab.id;
           return (
@@ -698,6 +701,13 @@ export const AdminPortal: React.FC<{
          ======================================================== */}
       {resolvedTab === 'recibos' && (
         <SimpleReceiptsView />
+      )}
+
+      {/* ========================================================
+          MÓDULO: REGISTRO DE PERSONAL & ASIGNACIÓN DE ROLES
+         ======================================================== */}
+      {resolvedTab === 'registro_personal' && (
+        <PersonnelRegistrationView />
       )}
 
       {/* ========================================================

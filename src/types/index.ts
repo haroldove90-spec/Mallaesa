@@ -492,5 +492,5 @@ export const ROLE_DEFAULT_MODULE: Record<RoleType, string> = {
   director: 'kpis',
   ventas: 'solicitudes',
   operaciones: 'ordenes',
-  administracion: 'cuentas'
+  administracion: 'registro_personal'
 };

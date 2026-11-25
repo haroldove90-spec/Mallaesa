@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import { useMallaesa } from '../context/MallaesaContext';
 import { Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
 
-interface LoginFormProps {
-  onBackToRoles?: () => void;
-}
-
-export const LoginForm: React.FC<LoginFormProps> = ({ onBackToRoles }) => {
+export const LoginForm: React.FC = () => {
   const { login } = useMallaesa();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -152,19 +148,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onBackToRoles }) => {
             </div>
           </form>
         </div>
-
-        {/* ACCIÓN DE REGRESO A ROLES */}
-        {onBackToRoles && (
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={onBackToRoles}
-              className="text-xs font-bold text-stone-600 hover:text-black hover:underline cursor-pointer transition"
-            >
-              ← Volver al Menú Principal de Roles
-            </button>
-          </div>
-        )}
 
         {/* AVISO DE PRIVACIDAD & SEGURIDAD */}
         <div className="mt-6 text-center text-xs text-stone-400 font-medium">

@@ -251,6 +251,8 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
 
   const [activeRole, setActiveRoleState] = useState<RoleType | null>(() => {
+    const savedUser = localStorage.getItem('mallaesa_current_user');
+    if (!savedUser) return null;
     return (localStorage.getItem(STORAGE_KEYS.ACTIVE_ROLE) as RoleType) || null;
   });
 
