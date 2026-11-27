@@ -95,34 +95,6 @@ export const DirectorDashboard: React.FC<{
 
   return (
     <div className="space-y-6">
-      {/* Barra de Pestañas Rápidas de Dirección */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-stone-200">
-        {[
-          { id: 'kpis', label: '1. Supervisión Ejecutiva & KPIs', icon: <TrendingUp className="w-4 h-4 text-emerald-600" /> },
-          { id: 'registro_personal', label: `2. Registro de Personal (${employees.length})`, icon: <UserPlus className="w-4 h-4 text-emerald-600" /> },
-          { id: 'productos', label: '3. Productos & Precios', icon: <Boxes className="w-4 h-4 text-amber-600" /> },
-          { id: 'aprobaciones', label: `4. Aprobaciones (${pendingApprovals.length})`, icon: <CheckCircle2 className="w-4 h-4 text-amber-600" /> },
-          { id: 'ordenes_compra', label: '5. Órdenes de Compra (OC)', icon: <Building2 className="w-4 h-4 text-blue-600" /> },
-          { id: 'financiero', label: '6. Reportes Financieros', icon: <DollarSign className="w-4 h-4 text-purple-600" /> },
-          { id: 'historial', label: `7. Historial (${formalQuotes.length})`, icon: <Clock className="w-4 h-4" /> }
-        ].map((tab) => {
-          const isActive = resolvedTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => onNavigateModule?.(tab.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
-                isActive
-                  ? 'bg-black text-white shadow-sm'
-                  : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100 hover:text-black'
-              }`}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
 
       {/* ========================================================
           MÓDULO 1: DASHBOARD EJECUTIVO (KPIS)

@@ -336,26 +336,37 @@ export const ProductsCatalogView: React.FC = () => {
             <button
               onClick={() => setIsResetConfirmOpen(true)}
               className="inline-flex items-center gap-1.5 px-3 py-2.5 text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-xl text-xs font-medium transition"
-              title="Restaurar catálogo inicial oficial (1,256 items)"
+              title="Restaurar catálogo inicial oficial (1,534 items en 7 submódulos)"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Restaurar Oficial</span>
+              <span className="hidden sm:inline">Restaurar Oficial (1,534)</span>
             </button>
           </div>
         </div>
 
-        {/* Submodules / Tabs */}
-        <div className="mt-6 border-b border-stone-200">
-          <div className="flex space-x-1 sm:space-x-2 overflow-x-auto pb-1 scrollbar-none">
+        {/* 7 Submódulos Oficiales - Panel de Acceso Directo Visible */}
+        <div className="mt-5 pt-4 border-t border-stone-100">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-amber-600" />
+              7 Submódulos de Precios Oficiales (100% Visibles)
+            </span>
+            <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+              7 de 7 Categorías Activas • {products.length} productos
+            </span>
+          </div>
+
+          {/* Selector de Pestañas con Envoltura Flexible (Sin barras ocultas ni corte de pantalla) */}
+          <div className="flex flex-wrap gap-2 pb-2">
             {[
-              { id: 'todos', label: 'Todos los Productos', count: tabCounts.todos },
-              { id: 'importacion', label: 'Catálogo de Importación', count: tabCounts.importacion },
-              { id: 'tuberias_laminas', label: 'Tuberías y Láminas', count: tabCounts.tuberias_laminas },
-              { id: 'malla_ciclonica', label: 'Malla Ciclónica', count: tabCounts.malla_ciclonica },
-              { id: 'reja_inde', label: 'Reja INDE y Puertas', count: tabCounts.reja_inde },
-              { id: 'concertina_alambres', label: 'Concertina y Alambres', count: tabCounts.concertina_alambres },
-              { id: 'accesorios_herrajes', label: 'Accesorios y Herrajes', count: tabCounts.accesorios_herrajes },
-              { id: 'mallas_especiales', label: 'Mallas Especiales', count: tabCounts.mallas_especiales }
+              { id: 'todos', num: '★', label: 'Todos los Productos', count: tabCounts.todos },
+              { id: 'importacion', num: '1', label: 'Catálogo de Importación', count: tabCounts.importacion },
+              { id: 'tuberias_laminas', num: '2', label: 'Tuberías y Láminas', count: tabCounts.tuberias_laminas },
+              { id: 'malla_ciclonica', num: '3', label: 'Malla Ciclónica', count: tabCounts.malla_ciclonica },
+              { id: 'reja_inde', num: '4', label: 'Reja INDE y Puertas', count: tabCounts.reja_inde },
+              { id: 'concertina_alambres', num: '5', label: 'Concertina y Alambres', count: tabCounts.concertina_alambres },
+              { id: 'accesorios_herrajes', num: '6', label: 'Accesorios y Herrajes', count: tabCounts.accesorios_herrajes },
+              { id: 'mallas_especiales', num: '7', label: 'Mallas Especiales', count: tabCounts.mallas_especiales }
             ].map(tab => {
               const isActive = activeTab === tab.id;
               return (
@@ -366,16 +377,23 @@ export const ProductsCatalogView: React.FC = () => {
                     setSelectedSubcategory('all');
                     setCurrentPage(1);
                   }}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-t-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all border-b-2 ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer shadow-xs border ${
                     isActive
-                      ? 'border-amber-600 text-amber-700 bg-amber-50/70 font-extrabold'
-                      : 'border-transparent text-stone-600 hover:text-stone-900 hover:bg-stone-50'
+                      ? 'bg-amber-600 text-white border-amber-700 shadow-amber-600/20 shadow-md font-extrabold'
+                      : 'bg-stone-50 hover:bg-stone-100 text-stone-700 border-stone-200 hover:border-stone-300'
                   }`}
                 >
+                  <span
+                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                      isActive ? 'bg-white/20 text-white' : 'bg-stone-200 text-stone-700'
+                    }`}
+                  >
+                    {tab.num}
+                  </span>
                   <span>{tab.label}</span>
                   <span
-                    className={`text-xs px-2 py-0.5 rounded-full ${
-                      isActive ? 'bg-amber-200 text-amber-900' : 'bg-stone-100 text-stone-600'
+                    className={`text-[11px] px-2 py-0.5 rounded-full font-mono ${
+                      isActive ? 'bg-amber-900/40 text-amber-100' : 'bg-white text-stone-600 border border-stone-200'
                     }`}
                   >
                     {tab.count}
@@ -903,7 +921,7 @@ export const ProductsCatalogView: React.FC = () => {
               <h3 className="text-base font-black text-stone-900">Restaurar Catálogo Oficial</h3>
             </div>
             <p className="text-xs text-stone-600 leading-relaxed">
-              Esto restablecerá los 1,256 productos oficiales de los 4 catálogos de Excel de Mallaesa (Importación, Tuberías y Láminas, Malla Ciclónica y Reja INDE).
+              Esto restablecerá los 1,534 productos oficiales de los 7 catálogos de Excel de Mallaesa (Importación, Tuberías y Láminas, Malla Ciclónica, Reja INDE, Concertina y Alambres, Accesorios y Herrajes, y Mallas Especiales).
             </p>
             <div className="mt-6 flex justify-end gap-2.5">
               <button

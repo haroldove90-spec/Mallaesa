@@ -254,7 +254,7 @@ const STORAGE_KEYS = {
   EMPLOYEES: 'mallaesa_employees',
   ATTENDANCE: 'mallaesa_attendance',
   WEEKLY_HOURS_LIMIT: 'mallaesa_weekly_hours_limit',
-  PRODUCTS: 'mallaesa_products_v1'
+  PRODUCTS: 'mallaesa_products_v2'
 };
 
 export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -448,15 +448,19 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const [products, setProducts] = useState<ProductItem[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+    // Check v2 key first, then fall back to previous v1 key
+    const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS) || localStorage.getItem('mallaesa_products_v1');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           if (parsed.length < INITIAL_PRODUCTS.length) {
+            const existingIds = new Set(parsed.map((p: any) => p.id));
             const existingSkus = new Set(parsed.map((p: any) => (p.sku || p.id).toLowerCase()));
-            const missing = INITIAL_PRODUCTS.filter(p => !existingSkus.has((p.sku || p.id).toLowerCase()));
-            return [...parsed, ...missing];
+            const missing = INITIAL_PRODUCTS.filter(p => !existingIds.has(p.id) && !existingSkus.has((p.sku || p.id).toLowerCase()));
+            const merged = [...parsed, ...missing];
+            localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(merged));
+            return merged;
           }
           return parsed;
         }
@@ -464,6 +468,9 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         console.warn('Error al cargar productos de almacenamiento local:', e);
       }
     }
+    try {
+      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
+    } catch (_) {}
     return INITIAL_PRODUCTS;
   });
 

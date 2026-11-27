@@ -236,34 +236,6 @@ export const OperationsPortal: React.FC<{
         </div>
       </div>
 
-      {/* Barra de Pestañas Rápidas Operativas */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-stone-200">
-        {[
-          { id: 'ordenes', label: '1. Órdenes de Trabajo (OT)', icon: <ClipboardList className="w-4 h-4" /> },
-          { id: 'avance_diario', label: '2. Avance Diario Cuadrillas (Firma)', icon: <TrendingUp className="w-4 h-4 text-emerald-600" /> },
-          { id: 'vehiculos', label: '3. Flotilla & Checklists (KM, Fotos)', icon: <Truck className="w-4 h-4 text-blue-600" /> },
-          { id: 'almacen_movimientos', label: '4. Ingresos/Egresos Almacén', icon: <Boxes className="w-4 h-4" /> },
-          { id: 'inventario', label: '5. Inventario & Stock', icon: <Boxes className="w-4 h-4" /> },
-          { id: 'campo', label: '6. Entrega Final Obra (Firma Cliente)', icon: <Camera className="w-4 h-4" /> }
-        ].map((tab) => {
-          const isActive = resolvedTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => onNavigateModule?.(tab.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
-                isActive
-                  ? 'bg-black text-white shadow-sm'
-                  : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100 hover:text-black'
-              }`}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
       {/* ========================================================
           MÓDULO 1: ÓRDENES DE TRABAJO (OT)
          ======================================================== */}

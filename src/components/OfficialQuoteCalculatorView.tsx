@@ -28,14 +28,18 @@ import {
   Package,
   Plus,
   Info,
-  DollarSign
+  DollarSign,
+  Search,
+  Tag,
+  Boxes,
+  X
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { OFFICIAL_PRICE_LIST, OfficialCategory, OfficialProduct } from '../data/officialPriceList';
 import { CategoryProductsModal } from './CategoryProductsModal';
 import { exportQuoteToPdf, IntelligentQuoteResult } from '../utils/quoteCalculator';
 import { useMallaesa } from '../context/MallaesaContext';
-import { QuoteItem } from '../types';
+import { QuoteItem, ProductItem } from '../types';
 
 interface CartItem {
   product: OfficialProduct;
@@ -56,11 +60,152 @@ interface OfficialQuoteCalculatorViewProps {
 }
 
 export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewProps> = ({ onGoToHistory }) => {
-  const { saveIntelligentQuote, preloadedQuoteDraft, clearPreloadedQuoteDraft } = useMallaesa();
+  const { products, saveIntelligentQuote, preloadedQuoteDraft, clearPreloadedQuoteDraft } = useMallaesa();
   const [selectedCategory, setSelectedCategory] = useState<OfficialCategory | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loadedFromAssistantNotification, setLoadedFromAssistantNotification] = useState<string | null>(null);
+  const [catalogSearchTerm, setCatalogSearchTerm] = useState('');
+  const [quickAddedId, setQuickAddedId] = useState<string | null>(null);
+
+  // Sincronización en tiempo real del Catálogo Maestro de Productos (1,534 productos en 7 submódulos)
+  const dynamicCategories: OfficialCategory[] = useMemo(() => {
+    if (!products || products.length === 0) return OFFICIAL_PRICE_LIST;
+
+    const catalogConfigs = [
+      {
+        type: 'importacion',
+        number: 1,
+        name: '1. Catálogo de Importación',
+        shortName: 'Importación',
+        description: 'Herrajes, fijación, accesorios especializados de alta gama y componentes importados.',
+        iconName: 'Layers',
+        badge: 'Catálogo Maestro'
+      },
+      {
+        type: 'tuberias_laminas',
+        number: 2,
+        name: '2. Tuberías y Láminas',
+        shortName: 'Tuberías y Láminas',
+        description: 'Postería cédula 30/40, tubo galvanizado, perfiles estructurales y láminas acanaladas R-72/R-101.',
+        iconName: 'Columns',
+        badge: 'Estructural'
+      },
+      {
+        type: 'malla_ciclonica',
+        number: 3,
+        name: '3. Malla Ciclónica',
+        shortName: 'Malla Ciclónica',
+        description: 'Rollos galvanizados, PVC verde/negro, calibres 10.5 a 13 y aberturas 55x55 a 69x69.',
+        iconName: 'Grid',
+        badge: 'Cercado Principal'
+      },
+      {
+        type: 'reja_inde',
+        number: 4,
+        name: '4. Reja INDE y Puertas',
+        shortName: 'Reja INDE y Puertas',
+        description: 'Paneles de reja contemporánea, postes para ahogar/placa, puertas peatonales y portones vehiculares.',
+        iconName: 'DoorClosed',
+        badge: 'Seguridad y Estética'
+      },
+      {
+        type: 'concertina_alambres',
+        number: 5,
+        name: '5. Concertina y Alambres',
+        shortName: 'Concertina y Alambres',
+        description: 'Concertina arpón/bisturí, alambre de púas galvanizado alta resistencia y alambres lisos tensores.',
+        iconName: 'ShieldAlert',
+        badge: 'Máxima Seguridad'
+      },
+      {
+        type: 'accesorios_herrajes',
+        number: 6,
+        name: '6. Accesorios y Herrajes',
+        shortName: 'Accesorios y Herrajes',
+        description: 'Abrazaderas de arranque y tensión, coples, barras superiores, retenidas, capuchas y tornillería.',
+        iconName: 'Wrench',
+        badge: 'Fijación y Ensamble'
+      },
+      {
+        type: 'mallas_especiales',
+        number: 7,
+        name: '7. Mallas Especiales',
+        shortName: 'Mallas Especiales',
+        description: 'Malla hexagonal, pajarera, borreguera, graduada campirana y mallas electrosoldadas.',
+        iconName: 'ShieldCheck',
+        badge: 'Especialidades'
+      }
+    ];
+
+    return catalogConfigs.map(cfg => {
+      const prodsForCat = products.filter(p => p.catalog_type === cfg.type);
+      const mappedProducts: OfficialProduct[] = prodsForCat.map(p => ({
+        id: p.id,
+        name: p.product_name,
+        spec: p.specifications || p.dimensions || p.subcategory || '',
+        gauge: p.gauge || undefined,
+        unit: p.unit || 'Pza',
+        price: p.price_base_sin_iva || 0,
+        priceDistributor: p.price_base_sin_iva || 0,
+        pricePublic: p.price_public_sin_iva || (p.price_base_sin_iva ? Number((p.price_base_sin_iva * 1.25).toFixed(2)) : 0),
+        material: p.category || p.subcategory || '',
+        notes: p.notes || (p.sku ? `SKU: ${p.sku}` : '')
+      }));
+
+      const prices = mappedProducts.map(p => p.price).filter(pr => pr > 0);
+      const minP = prices.length > 0 ? Math.min(...prices) : 0;
+      const maxP = prices.length > 0 ? Math.max(...prices) : 0;
+
+      return {
+        id: cfg.type,
+        number: cfg.number,
+        name: cfg.name,
+        shortName: cfg.shortName,
+        description: cfg.description,
+        iconName: cfg.iconName,
+        badge: `${mappedProducts.length} productos`,
+        itemsCount: mappedProducts.length,
+        priceRange: prices.length > 0 ? `$${minP.toFixed(2)} - $${maxP.toFixed(2)}` : '$0.00',
+        products: mappedProducts
+      };
+    });
+  }, [products]);
+
+  // Búsqueda directa en tiempo real entre los 1,534 productos del catálogo maestro
+  const quickSearchResults = useMemo(() => {
+    if (!catalogSearchTerm.trim() || catalogSearchTerm.trim().length < 2) return [];
+    const term = catalogSearchTerm.toLowerCase().trim();
+    return products
+      .filter(p =>
+        p.product_name?.toLowerCase().includes(term) ||
+        p.sku?.toLowerCase().includes(term) ||
+        p.specifications?.toLowerCase().includes(term) ||
+        p.dimensions?.toLowerCase().includes(term) ||
+        p.gauge?.toLowerCase().includes(term) ||
+        p.category?.toLowerCase().includes(term) ||
+        p.subcategory?.toLowerCase().includes(term)
+      )
+      .slice(0, 8);
+  }, [products, catalogSearchTerm]);
+
+  const handleQuickAdd = (prod: ProductItem) => {
+    const officialProd: OfficialProduct = {
+      id: prod.id,
+      name: prod.product_name,
+      spec: prod.specifications || prod.dimensions || prod.subcategory || '',
+      gauge: prod.gauge || undefined,
+      unit: prod.unit || 'Pza',
+      price: prod.price_base_sin_iva || 0,
+      priceDistributor: prod.price_base_sin_iva || 0,
+      pricePublic: prod.price_public_sin_iva || (prod.price_base_sin_iva ? Number((prod.price_base_sin_iva * 1.25).toFixed(2)) : 0),
+      material: prod.category || prod.subcategory || '',
+      notes: prod.notes || (prod.sku ? `SKU: ${prod.sku}` : '')
+    };
+    handleAddProduct(officialProd, 1);
+    setQuickAddedId(prod.id);
+    setTimeout(() => setQuickAddedId(null), 1500);
+  };
 
   // Sincronización automática con cotización precargada del Asistente Técnico Mallaesa
   useEffect(() => {
@@ -599,29 +744,119 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
       )}
 
       {/* ========================================================
-          PASO 1: LAS 8 TARJETAS DE CATEGORÍAS (MATERIA PRIMA)
+          PASO 1: LAS CATEGORÍAS DEL CATÁLOGO MAESTRO (1,534 PRODUCTOS)
          ======================================================== */}
-      <div className="space-y-4">
+      <div className="space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h2 className="text-lg sm:text-xl font-black text-black flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-black text-white text-xs flex items-center justify-center font-bold">
                 1
               </span>
-              <span>Paso 1: Selecciona la Materia Prima por Categoría</span>
+              <span>Paso 1: Selecciona Insumos por Categoría o Búsqueda Directa</span>
             </h2>
             <p className="text-xs text-stone-500">
-              Haz clic en cualquiera de las 8 tarjetas para abrir la ventana flotante y seleccionar tus insumos (postes, abrazaderas, malla, lámina, etc.).
+              Catálogo sincronizado en tiempo real con <strong>{products.length} productos</strong> oficiales (postes, abrazaderas, malla, lámina, concertina, reja, herrajes).
             </p>
           </div>
-          <span className="text-xs text-stone-500 font-medium">
-            {cart.length === 0 ? 'Sin materia prima agregada' : `${cart.length} productos en lista de insumos`}
+          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
+            {cart.length === 0 ? 'Sin materia prima agregada' : `${cart.length} partidas en lista de insumos`}
           </span>
         </div>
 
-        {/* Cuadrícula de 8 Tarjetas de Categorías */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 md:gap-5">
-          {OFFICIAL_PRICE_LIST.map(category => {
+        {/* Buscador Rápido Directo en los 1,534 Productos del Catálogo Maestro */}
+        <div className="bg-stone-50 border border-stone-200 rounded-2xl p-3 sm:p-4 shadow-xs">
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+            <input
+              type="text"
+              value={catalogSearchTerm}
+              onChange={e => setCatalogSearchTerm(e.target.value)}
+              placeholder="Buscar insumo rápido por nombre, SKU, medida o calibre (ej. Abrazadera, Tubo 48mm, Malla 2.00, Concertina 45cm, Reja 2.00)..."
+              className="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black transition"
+            />
+            {catalogSearchTerm && (
+              <button
+                type="button"
+                onClick={() => setCatalogSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-0.5"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Resultados de Búsqueda Rápida */}
+          {catalogSearchTerm.trim().length >= 2 && (
+            <div className="mt-3 pt-3 border-t border-stone-200">
+              <div className="flex items-center justify-between text-xs text-stone-500 mb-2">
+                <span>Resultados de búsqueda ({quickSearchResults.length} encontrados):</span>
+                <span className="text-[11px] text-stone-400">Precios base + IVA</span>
+              </div>
+
+              {quickSearchResults.length === 0 ? (
+                <div className="text-center py-4 text-xs text-stone-400">
+                  No se encontraron productos con "{catalogSearchTerm}". Revisa el catálogo por categorías abajo.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                  {quickSearchResults.map(prod => {
+                    const isAdded = quickAddedId === prod.id;
+                    return (
+                      <div
+                        key={prod.id}
+                        className="bg-white border border-stone-200 rounded-xl p-2.5 flex items-center justify-between gap-3 hover:border-black transition shadow-2xs"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-stone-100 text-stone-700">
+                              {prod.sku || 'SKU'}
+                            </span>
+                            <span className="font-bold text-xs text-stone-900 truncate">
+                              {prod.product_name}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-stone-500 truncate mt-0.5">
+                            {prod.specifications || prod.dimensions || prod.subcategory} • {prod.gauge || ''} {prod.unit || 'Pza'}
+                          </div>
+                          <div className="text-xs font-mono font-bold text-black mt-0.5">
+                            ${prod.price_base_sin_iva?.toFixed(2)} MXN
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleQuickAdd(prod)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 transition flex items-center gap-1 cursor-pointer ${
+                            isAdded
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-black hover:bg-stone-800 text-white'
+                          }`}
+                        >
+                          {isAdded ? (
+                            <>
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>¡Listo!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Agregar</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Cuadrícula de Categorías Oficiales */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 md:gap-5">
+          {dynamicCategories.map(category => {
             const itemsInThisCategory = cart.filter(item =>
               category.products.some(p => p.id === item.product.id)
             ).reduce((acc, i) => acc + i.quantity, 0);
@@ -639,11 +874,11 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
                 )}
 
                 <div>
-                  <div className="w-14 h-14 rounded-xl bg-stone-100 group-hover:bg-black group-hover:text-white flex items-center justify-center mb-3 transition-colors">
+                  <div className="w-12 h-12 rounded-xl bg-stone-100 group-hover:bg-black group-hover:text-white flex items-center justify-center mb-3 transition-colors">
                     {getCategoryIcon(category.iconName)}
                   </div>
                   <span className="text-[10px] font-mono font-bold text-[#898A82] uppercase tracking-wider block mb-1">
-                    Categoría 0{category.id}
+                    Submódulo 0{category.number} • {category.badge}
                   </span>
                   <h3 className="font-black text-sm sm:text-base text-black group-hover:text-black line-clamp-2 leading-snug">
                     {category.name}
@@ -653,7 +888,7 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
                   </p>
                 </div>
 
-                <div className="pt-4 mt-3 border-t border-stone-100 flex items-center justify-between text-xs">
+                <div className="pt-3 mt-3 border-t border-stone-100 flex items-center justify-between text-xs">
                   <span className="font-bold text-stone-600 group-hover:text-black transition">
                     Ver {category.products.length} productos
                   </span>

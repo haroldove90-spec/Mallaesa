@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   X,
   Plus,
@@ -15,7 +15,8 @@ import {
   ShieldCheck,
   DoorClosed,
   Info,
-  Tag
+  Tag,
+  Search
 } from 'lucide-react';
 import { OfficialCategory, OfficialProduct } from '../data/officialPriceList';
 
@@ -34,6 +35,20 @@ export const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
 }) => {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [addedItems, setAddedItems] = useState<Record<string, boolean>>({});
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const displayedProducts = useMemo(() => {
+    if (!category) return [];
+    if (!searchTerm.trim()) return category.products;
+    const term = searchTerm.toLowerCase();
+    return category.products.filter(p =>
+      p.name.toLowerCase().includes(term) ||
+      p.spec.toLowerCase().includes(term) ||
+      (p.gauge && p.gauge.toLowerCase().includes(term)) ||
+      (p.notes && p.notes.toLowerCase().includes(term)) ||
+      (p.material && p.material.toLowerCase().includes(term))
+    );
+  }, [category, searchTerm]);
 
   if (!isOpen || !category) return null;
 
@@ -108,15 +123,43 @@ export const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
           </button>
         </div>
 
+        {/* Barra de Búsqueda Rápida en Modal */}
+        <div className="px-4 sm:px-6 pt-3 pb-2 bg-stone-50/60 border-b border-stone-200">
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder={`Buscar en ${category.name} (por producto, medida, calibre o SKU)...`}
+              className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black transition"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-0.5"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Lista de Productos con Descripciones, Características y Precios */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3.5">
           <div className="flex items-center justify-between text-xs text-stone-500 pb-2 border-b border-stone-100">
-            <span>Mostrando <strong>{category.products.length} productos</strong> oficiales</span>
+            <span>Mostrando <strong>{displayedProducts.length} de {category.products.length} productos</strong> oficiales</span>
             <span className="text-[11px] font-medium text-stone-400">Precios: Más IVA | LAB Almacén</span>
           </div>
 
-          <div className="grid grid-cols-1 gap-3">
-            {category.products.map(prod => {
+          {displayedProducts.length === 0 ? (
+            <div className="text-center py-12 text-stone-400 text-xs">
+              No se encontraron productos en esta categoría con el término "{searchTerm}".
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3">
+              {displayedProducts.map(prod => {
               const qty = quantities[prod.id] || 1;
               const isAdded = addedItems[prod.id];
 
@@ -228,7 +271,8 @@ export const CategoryProductsModal: React.FC<CategoryProductsModalProps> = ({
               );
             })}
           </div>
-        </div>
+        )}
+      </div>
 
         {/* Pie de la Ventana Flotante */}
         <div className="p-4 bg-stone-100 border-t border-stone-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-stone-600">

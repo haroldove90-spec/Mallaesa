@@ -187,36 +187,6 @@ export const AdminPortal: React.FC<{
         </div>
       </div>
 
-      {/* Barra de Pestañas Rápidas Administrativas */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-stone-200">
-        {[
-          { id: 'registro_personal', label: `1. Registro de Personal (${employees.length})`, icon: <UserPlus className="w-4 h-4 text-emerald-600" /> },
-          { id: 'cuentas', label: '2. Cuentas por Cobrar (CxC)', icon: <Receipt className="w-4 h-4 text-emerald-600" /> },
-          { id: 'cuentas_pagar', label: '3. Cuentas por Pagar (CxP)', icon: <CreditCard className="w-4 h-4 text-blue-600" /> },
-          { id: 'proveedores', label: '4. Proveedores & Crédito', icon: <Building2 className="w-4 h-4 text-purple-600" /> },
-          { id: 'recibos', label: '5. Recibos Simples (Sin Factura)', icon: <FileText className="w-4 h-4" /> },
-          { id: 'facturas', label: '6. Facturación CFDI 4.0', icon: <FileCheck2 className="w-4 h-4" /> },
-          { id: 'personal_asistencia', label: '7. Asistencia & Horas Extras 40h', icon: <UserCheck className="w-4 h-4 text-emerald-600" /> },
-          { id: 'gastos', label: '8. Nómina & Gastos', icon: <Wallet className="w-4 h-4" /> }
-        ].map((tab) => {
-          const isActive = resolvedTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => onNavigateModule?.(tab.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
-                isActive
-                  ? 'bg-black text-white shadow-sm'
-                  : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100 hover:text-black'
-              }`}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
       {/* ========================================================
           MÓDULO 1: CUENTAS POR COBRAR (ANTICIPOS Y SALDOS)
          ======================================================== */}

@@ -281,31 +281,6 @@ export const ClientPortal: React.FC<{
         </div>
       </div>
 
-      {/* Pestañas de navegación rápida en Portal de Clientes */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-stone-200">
-        {[
-          { id: 'cotizador', label: '1. Cotizador Inteligente & Catálogo', icon: <Calculator className="w-4 h-4" /> },
-          { id: 'catalogo', label: '2. Catálogo Oficial de Acero', icon: <Grid className="w-4 h-4" /> },
-          { id: 'estatus', label: '3. Estatus de Proyecto & Garantía', icon: <Search className="w-4 h-4" /> }
-        ].map((tab) => {
-          const isActive = resolvedTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => onNavigateModule?.(tab.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
-                isActive
-                  ? 'bg-black text-white shadow-sm'
-                  : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100 hover:text-black'
-              }`}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
       {/* ========================================================
           MÓDULO 1: COTIZADOR (8 CATEGORÍAS OFICIALES O PARAMÉTRICO)
          ======================================================== */}

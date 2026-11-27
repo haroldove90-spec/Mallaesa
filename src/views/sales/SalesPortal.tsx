@@ -285,34 +285,6 @@ export const SalesPortal: React.FC<{
         </div>
       </div>
 
-      {/* Barra de Pestañas Rápidas de Ventas */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-stone-200">
-        {[
-          { id: 'solicitudes', label: `1. Solicitudes Web (${requests.length})`, icon: <Inbox className="w-4 h-4" /> },
-          { id: 'cotizador', label: '2. Cotizador Inteligente', icon: <Calculator className="w-4 h-4 text-blue-600" /> },
-          { id: 'catalogo', label: '3. Catálogo Oficial', icon: <Grid className="w-4 h-4" /> },
-          { id: 'crm', label: '4. CRM Prospectos', icon: <Kanban className="w-4 h-4 text-purple-600" /> },
-          { id: 'atencion_clientes', label: '5. Atención a Clientes', icon: <Phone className="w-4 h-4 text-amber-600" /> },
-          { id: 'historial', label: `6. Historial (${formalQuotes.length})`, icon: <FileText className="w-4 h-4" /> }
-        ].map((tab) => {
-          const isActive = resolvedTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => onNavigateModule?.(tab.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
-                isActive
-                  ? 'bg-black text-white shadow-sm'
-                  : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100 hover:text-black'
-              }`}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
       {/* ========================================================
           MÓDULO 1: BANDEJA DE ENTRADA DE SOLICITUDES
          ======================================================== */}
