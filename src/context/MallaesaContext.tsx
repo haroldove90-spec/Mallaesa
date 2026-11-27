@@ -1245,9 +1245,11 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         requestedAt: now
       };
       setApprovals(prev => [newApproval, ...prev]);
+      saveToSupabase('approvals', newApproval);
     }
 
     setFormalQuotes(prev => [newQuote, ...prev.filter(q => q.requestId !== requestId)]);
+    saveToSupabase('formal_quotes', newQuote);
 
     // Update request and project status
     setRequests(prev =>
@@ -1255,21 +1257,24 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
 
     setProjects(prev =>
-      prev.map(p =>
-        p.folio === folio
-          ? {
-              ...p,
-              quoteId,
-              phase: 2,
-              phaseName: 'Fase 2: Cotización Generada',
-              status: 'cotizacion_enviada',
-              totalAmount: total,
-              advanceAmount: advanceRequired,
-              balanceAmount: balanceRemaining,
-              updatedAt: now
-            }
-          : p
-      )
+      prev.map(p => {
+        if (p.folio === folio) {
+          const updated = {
+            ...p,
+            quoteId,
+            phase: 2,
+            phaseName: 'Fase 2: Cotización Generada',
+            status: 'cotizacion_enviada' as const,
+            totalAmount: total,
+            advanceAmount: advanceRequired,
+            balanceAmount: balanceRemaining,
+            updatedAt: now
+          };
+          saveToSupabase('projects', updated);
+          return updated;
+        }
+        return p;
+      })
     );
 
     return newQuote;
@@ -1295,21 +1300,31 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     setApprovals(prev => [newApproval, ...prev]);
+    saveToSupabase('approvals', newApproval);
+
     setFormalQuotes(prev =>
-      prev.map(q =>
-        q.id === quoteId
-          ? { ...q, discountPercent: percent, discountApprovalPending: true }
-          : q
-      )
+      prev.map(q => {
+        if (q.id === quoteId) {
+          const updated = { ...q, discountPercent: percent, discountApprovalPending: true };
+          saveToSupabase('formal_quotes', updated);
+          return updated;
+        }
+        return q;
+      })
     );
   };
 
   const sendQuoteToClient = (quoteId: string) => {
     const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
     setFormalQuotes(prev =>
-      prev.map(q =>
-        q.id === quoteId ? { ...q, status: 'enviada', sentAt: now } : q
-      )
+      prev.map(q => {
+        if (q.id === quoteId) {
+          const updated = { ...q, status: 'enviada' as const, sentAt: now };
+          saveToSupabase('formal_quotes', updated);
+          return updated;
+        }
+        return q;
+      })
     );
   };
 
@@ -1320,25 +1335,31 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!quote) return;
 
     setFormalQuotes(prev =>
-      prev.map(q =>
-        q.id === quoteId
-          ? { ...q, status: 'aprobada', approvedAt: now, clientSignature: signature }
-          : q
-      )
+      prev.map(q => {
+        if (q.id === quoteId) {
+          const updated = { ...q, status: 'aprobada' as const, approvedAt: now, clientSignature: signature };
+          saveToSupabase('formal_quotes', updated);
+          return updated;
+        }
+        return q;
+      })
     );
 
     setProjects(prev =>
-      prev.map(p =>
-        p.folio === quote.folio
-          ? {
-              ...p,
-              phase: 3,
-              phaseName: 'Fase 3: Aprobada - Esperando Anticipo 50%',
-              status: 'esperando_anticipo',
-              updatedAt: now
-            }
-          : p
-      )
+      prev.map(p => {
+        if (p.folio === quote.folio) {
+          const updated = {
+            ...p,
+            phase: 3,
+            phaseName: 'Fase 3: Aprobada - Esperando Anticipo 50%',
+            status: 'esperando_anticipo' as const,
+            updatedAt: now
+          };
+          saveToSupabase('projects', updated);
+          return updated;
+        }
+        return p;
+      })
     );
   };
 
@@ -1367,22 +1388,26 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     setInvoices(prev => [newInvoice, ...prev]);
+    saveToSupabase('invoices', newInvoice);
 
     setProjects(prev =>
-      prev.map(p =>
-        p.id === projectId
-          ? {
-              ...p,
-              advancePaid: true,
-              advanceDate: now,
-              advanceReceipt: receiptFolio || `SPEI-${Date.now()}`,
-              phase: 4,
-              phaseName: 'Fase 4: Anticipo Confirmado - Programación de OT',
-              status: 'anticipo_confirmado',
-              updatedAt: now
-            }
-          : p
-      )
+      prev.map(p => {
+        if (p.id === projectId) {
+          const updated = {
+            ...p,
+            advancePaid: true,
+            advanceDate: now,
+            advanceReceipt: receiptFolio || `SPEI-${Date.now()}`,
+            phase: 4,
+            phaseName: 'Fase 4: Anticipo Confirmado - Programación de OT',
+            status: 'anticipo_confirmado' as const,
+            updatedAt: now
+          };
+          saveToSupabase('projects', updated);
+          return updated;
+        }
+        return p;
+      })
     );
   };
 
@@ -1412,7 +1437,9 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       prev.map(item => {
         const reserved = materials.find(m => m.materialId === item.id);
         if (reserved) {
-          return { ...item, stock: Math.max(0, item.stock - reserved.quantity) };
+          const updatedItem = { ...item, stock: Math.max(0, item.stock - reserved.quantity) };
+          saveToSupabase('inventory', updatedItem);
+          return updatedItem;
         }
         return item;
       })
@@ -1438,20 +1465,24 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     setWorkOrders(prev => [newOT, ...prev]);
+    saveToSupabase('work_orders', newOT);
 
     setProjects(prev =>
-      prev.map(p =>
-        p.id === projectId
-          ? {
-              ...p,
-              workOrderId: newOT.id,
-              assignedCrew: newOT.crewName,
-              scheduledDate,
-              status: 'orden_programada',
-              updatedAt: new Date().toISOString().replace('T', ' ').substring(0, 16)
-            }
-          : p
-      )
+      prev.map(p => {
+        if (p.id === projectId) {
+          const updated = {
+            ...p,
+            workOrderId: newOT.id,
+            assignedCrew: newOT.crewName,
+            scheduledDate,
+            status: 'orden_programada' as const,
+            updatedAt: new Date().toISOString().replace('T', ' ').substring(0, 16)
+          };
+          saveToSupabase('projects', updated);
+          return updated;
+        }
+        return p;
+      })
     );
 
     return newOT;
@@ -1459,20 +1490,30 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const updateWorkOrderStatus = (workOrderId: string, status: WorkOrder['status']) => {
     setWorkOrders(prev =>
-      prev.map(ot => (ot.id === workOrderId ? { ...ot, status } : ot))
+      prev.map(ot => {
+        if (ot.id === workOrderId) {
+          const updated = { ...ot, status };
+          saveToSupabase('work_orders', updated);
+          return updated;
+        }
+        return ot;
+      })
     );
 
     const ot = workOrders.find(o => o.id === workOrderId);
     if (ot && ot.projectId) {
       setProjects(prev =>
-        prev.map(p =>
-          p.id === ot.projectId
-            ? {
-                ...p,
-                status: status === 'en_instalacion' ? 'en_instalacion' : p.status
-              }
-            : p
-        )
+        prev.map(p => {
+          if (p.id === ot.projectId) {
+            const updated = {
+              ...p,
+              status: status === 'en_instalacion' ? ('en_instalacion' as const) : p.status
+            };
+            saveToSupabase('projects', updated);
+            return updated;
+          }
+          return p;
+        })
       );
     }
   };
@@ -1490,40 +1531,46 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!ot) return;
 
     setWorkOrders(prev =>
-      prev.map(o =>
-        o.id === workOrderId
-          ? {
-              ...o,
-              status: 'completada',
-              clientSignature,
-              clientSignatureDate: now,
-              beforePhotos: beforePhotos.length > 0 ? beforePhotos : o.beforePhotos,
-              afterPhotos: afterPhotos.length > 0 ? afterPhotos : o.afterPhotos,
-              crewNotes: notes,
-              completedAt: now
-            }
-          : o
-      )
+      prev.map(o => {
+        if (o.id === workOrderId) {
+          const updated = {
+            ...o,
+            status: 'completada' as const,
+            clientSignature,
+            clientSignatureDate: now,
+            beforePhotos: beforePhotos.length > 0 ? beforePhotos : o.beforePhotos,
+            afterPhotos: afterPhotos.length > 0 ? afterPhotos : o.afterPhotos,
+            crewNotes: notes,
+            completedAt: now
+          };
+          saveToSupabase('work_orders', updated);
+          return updated;
+        }
+        return o;
+      })
     );
 
     // Auto issue digital warranty and move project to Phase 5: waiting for final payment
     const warrantyNum = `POL-MAL-${Date.now().toString().slice(-6)}`;
 
     setProjects(prev =>
-      prev.map(p =>
-        p.id === ot.projectId
-          ? {
-              ...p,
-              phase: 5,
-              phaseName: 'Fase 5: Cierre & Liquidación Pendiente',
-              status: 'esperando_saldo',
-              warrantyFolio: warrantyNum,
-              warrantyYears: 3,
-              warrantyIssuedAt: now,
-              updatedAt: now
-            }
-          : p
-      )
+      prev.map(p => {
+        if (p.id === ot.projectId) {
+          const updated = {
+            ...p,
+            phase: 5,
+            phaseName: 'Fase 5: Cierre & Liquidación Pendiente',
+            status: 'esperando_saldo' as const,
+            warrantyFolio: warrantyNum,
+            warrantyYears: 3,
+            warrantyIssuedAt: now,
+            updatedAt: now
+          };
+          saveToSupabase('projects', updated);
+          return updated;
+        }
+        return p;
+      })
     );
   };
 
@@ -1551,20 +1598,24 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     setInvoices(prev => [newInvoice, ...prev]);
+    saveToSupabase('invoices', newInvoice);
 
     setProjects(prev =>
-      prev.map(p =>
-        p.id === projectId
-          ? {
-              ...p,
-              balancePaid: true,
-              balanceDate: now,
-              status: 'finalizado',
-              phaseName: 'Fase 5: Concluido y Garantía Vigente',
-              updatedAt: now
-            }
-          : p
-      )
+      prev.map(p => {
+        if (p.id === projectId) {
+          const updated = {
+            ...p,
+            balancePaid: true,
+            balanceDate: now,
+            status: 'finalizado' as const,
+            phaseName: 'Fase 5: Concluido y Garantía Vigente',
+            updatedAt: now
+          };
+          saveToSupabase('projects', updated);
+          return updated;
+        }
+        return p;
+      })
     );
 
     return newInvoice;
@@ -1576,30 +1627,36 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const app = approvals.find(a => a.id === approvalId);
 
     setApprovals(prev =>
-      prev.map(a =>
-        a.id === approvalId
-          ? {
-              ...a,
-              status,
-              resolvedAt: now,
-              directorNotes: directorNotes || (status === 'aprobado' ? 'Autorizado por Eduardo Siller (Dirección General)' : 'No autorizado por política de margen')
-            }
-          : a
-      )
+      prev.map(a => {
+        if (a.id === approvalId) {
+          const updated = {
+            ...a,
+            status,
+            resolvedAt: now,
+            directorNotes: directorNotes || (status === 'aprobado' ? 'Autorizado por Eduardo Siller (Dirección General)' : 'No autorizado por política de margen')
+          };
+          saveToSupabase('approvals', updated);
+          return updated;
+        }
+        return a;
+      })
     );
 
     // If it was a discount approval, unlock the quote
     if (app && app.type === 'descuento') {
       setFormalQuotes(prev =>
-        prev.map(q =>
-          q.folio === app.referenceFolio
-            ? {
-                ...q,
-                discountApproved: status === 'aprobado',
-                discountApprovalPending: false
-              }
-            : q
-        )
+        prev.map(q => {
+          if (q.folio === app.referenceFolio) {
+            const updated = {
+              ...q,
+              discountApproved: status === 'aprobado',
+              discountApprovalPending: false
+            };
+            saveToSupabase('formal_quotes', updated);
+            return updated;
+          }
+          return q;
+        })
       );
     }
   };
@@ -1607,7 +1664,14 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Inventory adjustment
   const adjustInventoryStock = (itemId: string, newStock: number) => {
     setInventory(prev =>
-      prev.map(i => (i.id === itemId ? { ...i, stock: Math.max(0, newStock) } : i))
+      prev.map(i => {
+        if (i.id === itemId) {
+          const updated = { ...i, stock: Math.max(0, newStock) };
+          saveToSupabase('inventory', updated);
+          return updated;
+        }
+        return i;
+      })
     );
   };
 
@@ -1622,6 +1686,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     setPurchaseOrders(prev => [newPO, ...prev]);
+    saveToSupabase('purchase_orders', newPO);
 
     // Crear automáticamente cuenta por pagar asociada si la OC queda autorizada o en camino
     if (poData.status === 'autorizada' || poData.status === 'en_camino') {
@@ -1640,6 +1705,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         notes: `Generado automáticamente por ${folio}`
       };
       setAccountsPayable(prev => [newCXP, ...prev]);
+      saveToSupabase('accounts_payable', newCXP);
     }
 
     return newPO;
@@ -1647,7 +1713,14 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const updatePurchaseOrderStatus = (poId: string, status: PurchaseOrder['status']) => {
     setPurchaseOrders(prev =>
-      prev.map(p => (p.id === poId ? { ...p, status } : p))
+      prev.map(p => {
+        if (p.id === poId) {
+          const updated = { ...p, status };
+          saveToSupabase('purchase_orders', updated);
+          return updated;
+        }
+        return p;
+      })
     );
   };
 
@@ -1658,19 +1731,24 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
 
     // 1. Marcar OC como recibida
+    const updatedPO = { ...po, status: 'recibida' as const, receivedAt: now };
     setPurchaseOrders(prev =>
-      prev.map(p => (p.id === poId ? { ...p, status: 'recibida', receivedAt: now } : p))
+      prev.map(p => (p.id === poId ? updatedPO : p))
     );
+    saveToSupabase('purchase_orders', updatedPO);
 
     // 2. Incrementar stock en inventario
     po.items.forEach(item => {
       if (item.inventoryItemId) {
         setInventory(prev =>
-          prev.map(inv =>
-            inv.id === item.inventoryItemId
-              ? { ...inv, stock: inv.stock + item.quantity }
-              : inv
-          )
+          prev.map(inv => {
+            if (inv.id === item.inventoryItemId) {
+              const updatedInv = { ...inv, stock: inv.stock + item.quantity };
+              saveToSupabase('inventory', updatedInv);
+              return updatedInv;
+            }
+            return inv;
+          })
         );
       }
     });
@@ -1694,6 +1772,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       status: 'completado'
     };
     setWarehouseMovements(prev => [newMov, ...prev]);
+    saveToSupabase('warehouse_movements', newMov);
   };
 
   // Cuentas por Pagar (CxP)
@@ -1707,6 +1786,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       status: 'pendiente'
     };
     setAccountsPayable(prev => [newCXP, ...prev]);
+    saveToSupabase('accounts_payable', newCXP);
     return newCXP;
   };
 
@@ -1718,7 +1798,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const newPaid = Number((cxp.amountPaid + amount).toFixed(2));
         const newBalance = Math.max(0, Number((cxp.amount - newPaid).toFixed(2)));
         const newStatus: AccountsPayableItem['status'] = newBalance <= 0 ? 'pagado' : 'parcial';
-        return {
+        const updated = {
           ...cxp,
           amountPaid: newPaid,
           balance: newBalance,
@@ -1726,6 +1806,8 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           paymentMethod: method,
           paidAt: now
         };
+        saveToSupabase('accounts_payable', updated);
+        return updated;
       })
     );
   };
@@ -1739,6 +1821,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ...data
     };
     setSimpleReceipts(prev => [newReceipt, ...prev]);
+    saveToSupabase('simple_receipts', newReceipt);
 
     // Si está vinculado a un proyecto, sincronizar saldo
     if (data.projectId) {
@@ -1746,20 +1829,24 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         prev.map(p => {
           if (p.id !== data.projectId) return p;
           if (data.paymentType === 'anticipo') {
-            return {
+            const updated = {
               ...p,
               advancePaid: true,
               advanceDate: data.date,
               advanceReceipt: folio,
-              status: 'anticipo_confirmado'
+              status: 'anticipo_confirmado' as const
             };
+            saveToSupabase('projects', updated);
+            return updated;
           } else if (data.paymentType === 'liquidacion_total') {
-            return {
+            const updated = {
               ...p,
               balancePaid: true,
               balanceDate: data.date,
-              status: 'finalizado'
+              status: 'finalizado' as const
             };
+            saveToSupabase('projects', updated);
+            return updated;
           }
           return p;
         })
@@ -1789,18 +1876,22 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setInventory(prev =>
           prev.map(inv => {
             if (inv.id !== item.inventoryItemId) return inv;
+            let newStock = inv.stock;
             if (data.type === 'egreso_obra') {
-              return { ...inv, stock: Math.max(0, inv.stock - item.quantity) };
+              newStock = Math.max(0, inv.stock - item.quantity);
             } else if (data.type === 'ingreso_compra' || data.type === 'devolucion_sobrante') {
-              return { ...inv, stock: inv.stock + item.quantity };
+              newStock = inv.stock + item.quantity;
             }
-            return inv;
+            const updatedInv = { ...inv, stock: newStock };
+            saveToSupabase('inventory', updatedInv);
+            return updatedInv;
           })
         );
       }
     });
 
     setWarehouseMovements(prev => [newMov, ...prev]);
+    saveToSupabase('warehouse_movements', newMov);
     return newMov;
   };
 
@@ -1815,22 +1906,26 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ...data
     };
     setCustomerServiceTickets(prev => [newTicket, ...prev]);
+    saveToSupabase('customer_service_tickets', newTicket);
     return newTicket;
   };
 
   const updateCustomerServiceTicketStatus = (ticketId: string, status: CustomerServiceTicket['status'], resolutionNotes?: string) => {
     const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
     setCustomerServiceTickets(prev =>
-      prev.map(t =>
-        t.id === ticketId
-          ? {
-              ...t,
-              status,
-              resolutionNotes: resolutionNotes || t.resolutionNotes,
-              resolvedAt: status === 'resuelto' ? now : t.resolvedAt
-            }
-          : t
-      )
+      prev.map(t => {
+        if (t.id === ticketId) {
+          const updated = {
+            ...t,
+            status,
+            resolutionNotes: resolutionNotes || t.resolutionNotes,
+            resolvedAt: status === 'resuelto' ? now : t.resolvedAt
+          };
+          saveToSupabase('customer_service_tickets', updated);
+          return updated;
+        }
+        return t;
+      })
     );
   };
 
@@ -1845,6 +1940,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       createdAt: new Date().toISOString()
     };
     setDailyWorkLogs(prev => [newLog, ...prev]);
+    saveToSupabase('daily_work_logs', newLog);
     return newLog;
   };
 
@@ -1859,6 +1955,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       createdAt: new Date().toISOString()
     };
     setVehicleLogs(prev => [newLog, ...prev]);
+    saveToSupabase('vehicle_logs', newLog);
     return newLog;
   };
 
@@ -1875,12 +1972,14 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setVehicleLogs(prev => prev.map(v => {
       if (v.id !== id) return v;
       const distanceTraveledKm = Math.max(0, returnData.returnMileage - v.departureMileage);
-      return {
+      const updated = {
         ...v,
         ...returnData,
         distanceTraveledKm,
         status: 'retornado' as const
       };
+      saveToSupabase('vehicle_logs', updated);
+      return updated;
     }));
   };
 
@@ -1892,7 +1991,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (p.id !== projectId) return p;
       const advanceAmount = Number(((p.totalAmount * validAdvance) / 100).toFixed(2));
       const balanceAmount = Number((p.totalAmount - advanceAmount).toFixed(2));
-      return {
+      const updated = {
         ...p,
         advancePercent: validAdvance,
         balancePercent: validBalance,
@@ -1900,6 +1999,8 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         balanceAmount,
         updatedAt: new Date().toISOString()
       };
+      saveToSupabase('projects', updated);
+      return updated;
     }));
   };
 

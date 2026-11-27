@@ -3,9 +3,21 @@ import { createClient } from '@supabase/supabase-js';
 // Supabase project credentials for MALLAESA
 // Project Name: mallaesa@grupoinmobiliariamr.com's Project
 // Project ID: uivyldmrbdwvbagsakij
-const rawUrl = (import.meta.env.VITE_SUPABASE_URL as string) || 'https://uivyldmrbdwvbagsakij.supabase.co';
+const getEnvVar = (key: string, fallback: string): string => {
+  if (typeof process !== 'undefined' && process.env && process.env[key]) {
+    return process.env[key] as string;
+  }
+  try {
+    if (typeof import.meta !== 'undefined' && (import.meta as any)?.env?.[key]) {
+      return (import.meta as any).env[key];
+    }
+  } catch {}
+  return fallback;
+};
+
+const rawUrl = getEnvVar('VITE_SUPABASE_URL', 'https://uivyldmrbdwvbagsakij.supabase.co');
 export const SUPABASE_URL = rawUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
-export const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || 'sb_publishable_qqwHMZcX_rjnAaLvTqeTwA_nDc7g1yi';
+export const SUPABASE_ANON_KEY = getEnvVar('VITE_SUPABASE_ANON_KEY', 'sb_publishable_qqwHMZcX_rjnAaLvTqeTwA_nDc7g1yi');
 export const SUPABASE_PROJECT_ID = 'uivyldmrbdwvbagsakij';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -115,6 +127,7 @@ export function formatPayloadForSupabase(tableName: string, record: any): any {
       password: String(record.password || '').trim(),
       full_name: String(record.full_name || record.fullName || '').trim(),
       role: String(record.role || record.assignedRole || 'operaciones'),
+      phone: record.phone || null,
       status: String(record.status || 'activo'),
       updated_at: new Date().toISOString()
     };
@@ -161,12 +174,13 @@ export function formatPayloadForSupabase(tableName: string, record: any): any {
       check_in: record.checkIn || record.check_in || '',
       check_out: record.checkOut || record.check_out || '',
       lunch_minutes: Number(record.lunchMinutes ?? record.lunch_minutes ?? 60),
-      status: record.status || 'presente',
-      hours_worked: Number(record.hoursWorked ?? record.hours_worked ?? 8),
-      overtime_hours: Number(record.overtimeHours ?? record.overtime_hours ?? 0),
-      location_or_project: record.locationOrProject || record.location_or_project || '',
+      status: record.status || 'asistio',
+      regular_hours: Number(record.regularHours ?? record.hoursWorked ?? record.regular_hours ?? 8),
+      overtime_double_hours: Number(record.overtimeDoubleHours ?? record.overtime_double_hours ?? 0),
+      overtime_triple_hours: Number(record.overtimeTripleHours ?? record.overtime_triple_hours ?? 0),
+      total_hours: Number(record.totalHours ?? record.total_hours ?? ((record.hoursWorked || 8) + (record.overtimeHours || 0))),
       notes: record.notes || '',
-      verified_by: record.verifiedBy || record.verified_by || '',
+      signed_by_supervisor: record.signedBySupervisor || record.verifiedBy || record.signed_by_supervisor || '',
       raw_data: record,
       updated_at: new Date().toISOString()
     };
@@ -189,6 +203,309 @@ export function formatPayloadForSupabase(tableName: string, record: any): any {
       price_public_sin_iva: Number(record.price_public_sin_iva ?? 0),
       price_public_con_iva: Number(record.price_public_con_iva ?? 0),
       notes: String(record.notes || ''),
+      raw_data: record,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  if (tableName === 'quote_requests') {
+    return {
+      id: String(record.id),
+      folio: record.folio || record.id || '',
+      client_name: record.clientName || record.client_name || '',
+      client_phone: record.clientPhone || record.client_phone || '',
+      client_email: record.clientEmail || record.client_email || '',
+      project_address: record.projectAddress || record.project_address || '',
+      city: record.city || '',
+      service_type: record.serviceType || record.service_type || '',
+      linear_meters: Number(record.linearMeters ?? record.linear_meters ?? 0),
+      height_meters: Number(record.heightMeters ?? record.height_meters ?? 0),
+      terrain_type: record.terrainType || record.terrain_type || '',
+      notes: record.notes || '',
+      photo_url: record.photoUrl || record.photo_url || '',
+      status: record.status || 'nuevo',
+      raw_data: record,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  if (tableName === 'formal_quotes') {
+    return {
+      id: String(record.id),
+      folio: record.folio || record.id || '',
+      request_id: record.requestId || record.request_id || null,
+      client_name: record.clientName || record.client_name || '',
+      client_phone: record.clientPhone || record.client_phone || '',
+      client_email: record.clientEmail || record.client_email || '',
+      project_address: record.projectAddress || record.project_address || '',
+      city: record.city || '',
+      service_type: record.serviceType || record.service_type || '',
+      linear_meters: Number(record.linearMeters ?? record.linear_meters ?? 0),
+      height_meters: Number(record.heightMeters ?? record.height_meters ?? 0),
+      terrain_type: record.terrainType || record.terrain_type || '',
+      items: record.items || [],
+      raw_materials: record.rawMaterials || record.raw_materials || [],
+      raw_materials_cost: Number(record.rawMaterialsCost ?? record.raw_materials_cost ?? 0),
+      profit_margin_percent: Number(record.profitMarginPercent ?? record.profit_margin_percent ?? 36.5),
+      profit_amount: Number(record.profitAmount ?? record.profit_amount ?? 0),
+      subtotal: Number(record.subtotal ?? 0),
+      iva: Number(record.iva ?? 0),
+      total: Number(record.total ?? 0),
+      advance_percent: Number(record.advancePercent ?? record.advance_percent ?? 50),
+      balance_percent: Number(record.balancePercent ?? record.balance_percent ?? 50),
+      advance50: Number(record.advance50 ?? record.advanceAmount ?? 0),
+      balance50: Number(record.balance50 ?? record.balanceAmount ?? 0),
+      estimated_work_days: Number(record.estimatedWorkDays ?? record.estimated_work_days ?? 3),
+      status: record.status || 'borrador',
+      client_signature: record.clientSignature || record.client_signature || null,
+      raw_data: record,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  if (tableName === 'projects') {
+    return {
+      id: String(record.id),
+      name: record.name || record.projectAddress || (record.clientName ? `Proyecto ${record.clientName}` : 'Proyecto Perimetral'),
+      client_name: record.clientName || record.client_name || '',
+      client_phone: record.clientPhone || record.client_phone || '',
+      client_email: record.clientEmail || record.client_email || '',
+      address: record.address || record.projectAddress || '',
+      service_type: record.serviceType || record.service_type || '',
+      linear_meters: Number(record.linearMeters ?? record.linear_meters ?? 0),
+      height_meters: Number(record.heightMeters ?? record.height_meters ?? 0),
+      total_amount: Number(record.totalAmount ?? record.total_amount ?? 0),
+      advance_amount: Number(record.advanceAmount ?? record.advance_amount ?? 0),
+      balance_amount: Number(record.balanceAmount ?? record.balance_amount ?? 0),
+      advance_percent: Number(record.advancePercent ?? record.advance_percent ?? 50),
+      balance_percent: Number(record.balancePercent ?? record.balance_percent ?? 50),
+      advance_paid: Boolean(record.advancePaid ?? record.advance_paid ?? false),
+      balance_paid: Boolean(record.balancePaid ?? record.balance_paid ?? false),
+      phase: Number(record.phase ?? 1),
+      status: record.status || 'activo',
+      warranty_pdf_generated: Boolean(record.warrantyPdfGenerated ?? record.warranty_pdf_generated ?? false),
+      raw_data: record,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  if (tableName === 'work_orders') {
+    return {
+      id: String(record.id),
+      folio: record.folio || record.id || '',
+      project_id: record.projectId || record.project_id || null,
+      crew_id: record.crewId || record.crew_id || null,
+      crew_name: record.crewName || record.crew_name || '',
+      client_name: record.clientName || record.client_name || '',
+      address: record.address || record.projectAddress || '',
+      linear_meters: Number(record.linearMeters ?? record.linear_meters ?? 0),
+      service_type: record.serviceType || record.service_type || '',
+      scheduled_date: record.scheduledDate || record.scheduled_date || '',
+      scheduled_time: record.scheduledTime || record.scheduled_time || '',
+      status: record.status || 'programada',
+      client_signature: record.clientSignature || record.client_signature || null,
+      supervisor_signature: record.supervisorSignature || record.supervisor_signature || null,
+      before_photos: record.beforePhotos || record.before_photos || [],
+      after_photos: record.afterPhotos || record.after_photos || [],
+      notes: record.notes || '',
+      raw_data: record,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  if (tableName === 'inventory') {
+    return {
+      id: String(record.id),
+      name: record.name || '',
+      category: record.category || '',
+      unit: record.unit || 'Pza',
+      stock: Number(record.stock ?? 0),
+      min_stock: Number(record.minStock ?? record.min_stock ?? 0),
+      cost: Number(record.cost ?? record.unitCost ?? 0),
+      price: Number(record.price ?? record.unitPrice ?? 0),
+      raw_data: record,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  if (tableName === 'suppliers') {
+    return {
+      id: String(record.id),
+      name: record.commercialName || record.businessName || record.name || 'Proveedor MALLAESA',
+      rfc: record.rfc || '',
+      contact_person: record.contactName || record.contact_person || '',
+      phone: record.phone || '',
+      email: record.email || '',
+      address: record.address || '',
+      credit_days: Number(record.creditDays ?? record.credit_days ?? 0),
+      credit_limit: Number(record.creditLimit ?? record.credit_limit ?? 0),
+      current_balance: Number(record.currentBalance ?? record.current_balance ?? 0),
+      category: record.category || '',
+      notes: record.notes || '',
+      raw_data: record,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  if (tableName === 'purchase_orders') {
+    return {
+      id: String(record.id),
+      folio: record.folio || record.id || '',
+      supplier_id: record.supplierId || record.supplier_id || null,
+      supplier_name: record.supplierName || record.supplier_name || record.provider || 'Proveedor',
+      items: record.items || [],
+      subtotal: Number(record.subtotal ?? 0),
+      iva: Number(record.iva ?? 0),
+      total: Number(record.total ?? 0),
+      status: record.status || 'emitida',
+      payment_terms: record.paymentTerms || record.payment_terms || '',
+      delivery_date: record.deliveryDate || record.delivery_date || '',
+      notes: record.notes || '',
+      raw_data: record,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  if (tableName === 'accounts_payable') {
+    return {
+      id: String(record.id),
+      folio: record.folio || record.id || '',
+      supplier_id: record.supplierId || record.supplier_id || null,
+      supplier_name: record.supplierName || record.supplier_name || record.provider || 'Proveedor',
+      concept: record.concept || '',
+      invoice_number: record.invoiceNumber || record.invoice_number || '',
+      total_amount: Number(record.totalAmount ?? record.total_amount ?? record.total ?? 0),
+      amount_paid: Number(record.amountPaid ?? record.amount_paid ?? 0),
+      balance: Number(record.balance ?? ((record.totalAmount ?? record.total ?? 0) - (record.amountPaid ?? 0))),
+      due_date: record.dueDate || record.due_date || '',
+      status: record.status || 'pendiente',
+      raw_data: record,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  if (tableName === 'simple_receipts') {
+    return {
+      id: String(record.id),
+      folio: record.folio || record.id || '',
+      client_name: record.clientName || record.client_name || '',
+      concept: record.concept || '',
+      amount: Number(record.amount ?? 0),
+      payment_method: record.paymentMethod || record.payment_method || 'Efectivo',
+      notes: record.notes || '',
+      raw_data: record,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  if (tableName === 'invoices') {
+    return {
+      id: String(record.id),
+      series_number: record.seriesNumber || record.series_number || record.id || '',
+      project_id: record.projectId || record.project_id || null,
+      client_name: record.clientName || record.client_name || '',
+      client_rfc: record.clientRfc || record.client_rfc || '',
+      subtotal: Number(record.subtotal ?? 0),
+      iva: Number(record.iva ?? 0),
+      total: Number(record.total ?? 0),
+      status: record.status || 'timbrada',
+      payment_way: record.paymentWay || record.payment_way || 'Transferencia SPEI (03)',
+      raw_data: record,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  if (tableName === 'approvals') {
+    return {
+      id: String(record.id),
+      type: record.type || 'descuento',
+      title: record.title || '',
+      description: record.description || '',
+      requested_by: record.requestedBy || record.requested_by || '',
+      status: record.status || 'pendiente',
+      discount_percent: Number(record.discountPercent ?? record.discount_percent ?? 0),
+      quote_id: record.quoteId || record.quote_id || null,
+      director_notes: record.directorNotes || record.director_notes || '',
+      raw_data: record,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  if (tableName === 'daily_work_logs') {
+    return {
+      id: String(record.id),
+      folio: record.folio || record.id || '',
+      project_id: record.projectId || record.project_id || null,
+      work_order_folio: record.workOrderFolio || record.work_order_folio || '',
+      crew_name: record.crewName || record.crew_name || '',
+      date: record.date || '',
+      advance_percentage: Number(record.advancePercentage ?? record.advance_percentage ?? 0),
+      meters_installed_today: Number(record.metersInstalledToday ?? record.meters_installed_today ?? 0),
+      work_performed: record.workPerformed || record.work_performed || '',
+      obstacles: record.obstacles || '',
+      photo_url: record.photoUrl || record.photo_url || '',
+      crew_signature: record.crewSignature || record.crew_signature || '',
+      supervisor_signature: record.supervisorSignature || record.supervisor_signature || '',
+      raw_data: record,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  if (tableName === 'vehicle_logs') {
+    return {
+      id: String(record.id),
+      folio: record.folio || record.id || '',
+      vehicle_name: record.vehicleName || record.vehicle_name || '',
+      plates: record.plates || '',
+      driver_name: record.driverName || record.driver_name || '',
+      departure_date: record.departureDate || record.departure_date || '',
+      departure_time: record.departureTime || record.departure_time || '',
+      departure_mileage: Number(record.departureMileage ?? record.departure_mileage ?? 0),
+      departure_fuel_level: record.departureFuelLevel || record.departure_fuel_level || '',
+      departure_conditions: record.departureConditions || record.departure_conditions || '',
+      departure_photo_url: record.departurePhotoUrl || record.departure_photo_url || '',
+      departure_signature: record.departureSignature || record.departure_signature || '',
+      return_date: record.returnDate || record.return_date || null,
+      return_time: record.returnTime || record.return_time || null,
+      return_mileage: Number(record.returnMileage ?? record.return_mileage ?? 0),
+      return_fuel_level: record.returnFuelLevel || record.return_fuel_level || null,
+      return_conditions: record.returnConditions || record.return_conditions || null,
+      return_photo_url: record.returnPhotoUrl || record.return_photo_url || null,
+      return_signature: record.returnSignature || record.return_signature || null,
+      status: record.status || 'en_ruta',
+      raw_data: record,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  if (tableName === 'customer_service_tickets') {
+    return {
+      id: String(record.id),
+      folio: record.folio || record.id || '',
+      client_name: record.clientName || record.client_name || '',
+      client_phone: record.clientPhone || record.client_phone || '',
+      client_email: record.clientEmail || record.client_email || '',
+      subject: record.subject || '',
+      description: record.description || '',
+      priority: record.priority || 'normal',
+      status: record.status || 'abierto',
+      resolution_notes: record.resolutionNotes || record.resolution_notes || '',
+      raw_data: record,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  if (tableName === 'warehouse_movements') {
+    return {
+      id: String(record.id),
+      folio: record.folio || record.id || '',
+      type: record.type || 'salida',
+      item_name: record.itemName || record.item_name || '',
+      quantity: Number(record.quantity ?? 0),
+      unit: record.unit || 'Pza',
+      reason: record.reason || '',
+      authorized_by: record.authorizedBy || record.authorized_by || '',
+      date: record.date || '',
       raw_data: record,
       updated_at: new Date().toISOString()
     };
