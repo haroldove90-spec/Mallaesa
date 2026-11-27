@@ -24,7 +24,8 @@ import {
   Employee,
   AttendanceRecord,
   EmployeeWeeklySummary,
-  AppUser
+  AppUser,
+  ProductItem
 } from '../types';
 import {
   INITIAL_REQUESTS,
@@ -45,11 +46,13 @@ import {
   INITIAL_SUPPLIERS
 } from '../data/initialData';
 import { INITIAL_EMPLOYEES, INITIAL_ATTENDANCE } from '../data/initialEmployees';
+import { INITIAL_PRODUCTS } from '../data/initialProducts';
 import { PreloadedQuoteDraft } from '../utils/assistantQuoteParser';
 import {
   supabase,
   saveToSupabase,
   deleteFromSupabase,
+  deleteMultipleFromSupabase,
   clearTableInSupabase,
   fetchFromSupabase,
   getAppSettingsFromSupabase,
@@ -216,6 +219,15 @@ interface MallaesaContextType {
   syncWithSupabase: () => Promise<{ success: boolean; message: string }>;
   deleteProject: (id: string) => void;
   deleteWorkOrder: (id: string) => void;
+
+  // Catálogo Oficial de Productos y Precios (Cotizador y Catálogo)
+  products: ProductItem[];
+  addProduct: (product: Omit<ProductItem, 'id'> & { id?: string }) => Promise<boolean>;
+  updateProduct: (product: ProductItem) => Promise<boolean>;
+  deleteProduct: (id: string) => Promise<boolean>;
+  deleteMultipleProducts: (ids: string[]) => Promise<boolean>;
+  importProducts: (newProducts: ProductItem[], conflictResolution: 'replace' | 'skip') => Promise<{ added: number; updated: number; skipped: number }>;
+  resetProductsToDefault: () => void;
 }
 
 const MallaesaContext = createContext<MallaesaContextType | undefined>(undefined);
@@ -241,7 +253,8 @@ const STORAGE_KEYS = {
   SUPPLIERS: 'mallaesa_suppliers',
   EMPLOYEES: 'mallaesa_employees',
   ATTENDANCE: 'mallaesa_attendance',
-  WEEKLY_HOURS_LIMIT: 'mallaesa_weekly_hours_limit'
+  WEEKLY_HOURS_LIMIT: 'mallaesa_weekly_hours_limit',
+  PRODUCTS: 'mallaesa_products_v1'
 };
 
 export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -434,6 +447,27 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem(STORAGE_KEYS.DIRECTOR_TARGET_MARGIN, String(valid));
   };
 
+  const [products, setProducts] = useState<ProductItem[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {
+        console.warn('Error al cargar productos de almacenamiento local:', e);
+      }
+    }
+    return INITIAL_PRODUCTS;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+    } catch (e) {
+      console.warn('Error al persistir productos en localStorage:', e);
+    }
+  }, [products]);
+
   const crews = INITIAL_CREWS;
 
   // Synchronize to localStorage
@@ -542,7 +576,8 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         remoteApprovals,
         remoteDailyLogs,
         remoteVehicleLogs,
-        remoteRequests
+        remoteRequests,
+        remoteProducts
       ] = await Promise.all([
         fetchFromSupabase<Employee>('employees'),
         fetchFromSupabase<AttendanceRecord>('attendance_records'),
@@ -557,7 +592,8 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         fetchFromSupabase<Approval>('approvals'),
         fetchFromSupabase<DailyWorkLog>('daily_work_logs'),
         fetchFromSupabase<VehicleLog>('vehicle_logs'),
-        fetchFromSupabase<QuoteRequest>('quote_requests')
+        fetchFromSupabase<QuoteRequest>('quote_requests'),
+        fetchFromSupabase<ProductItem>('products')
       ]);
 
       if (remoteEmployees !== null) {
@@ -647,6 +683,9 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       if (remoteRequests !== null && (remoteRequests.length > 0 || isSampleCleared)) {
         setRequests(remoteRequests);
+      }
+      if (remoteProducts !== null && remoteProducts.length > 0) {
+        setProducts(remoteProducts);
       }
 
       return {
@@ -2054,6 +2093,103 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setPreloadedQuoteDraft(null);
   };
 
+  // ==========================================
+  // GESTIÓN DEL CATÁLOGO DE PRODUCTOS Y PRECIOS
+  // ==========================================
+  const addProduct = async (productData: Omit<ProductItem, 'id'> & { id?: string }): Promise<boolean> => {
+    const id = productData.id || productData.sku || `PROD-${Date.now()}`;
+    const newProd: ProductItem = {
+      ...productData,
+      id,
+      sku: productData.sku || id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    setProducts(prev => [newProd, ...prev]);
+    saveToSupabase('products', newProd).catch(console.warn);
+    return true;
+  };
+
+  const updateProduct = async (updated: ProductItem): Promise<boolean> => {
+    const withTimestamp: ProductItem = { ...updated, updated_at: new Date().toISOString() };
+    setProducts(prev => prev.map(p => (p.id === updated.id || p.sku === updated.sku) ? withTimestamp : p));
+    saveToSupabase('products', withTimestamp).catch(console.warn);
+    return true;
+  };
+
+  const deleteProduct = async (id: string): Promise<boolean> => {
+    setProducts(prev => prev.filter(p => p.id !== id && p.sku !== id));
+    deleteFromSupabase('products', id).catch(console.warn);
+    return true;
+  };
+
+  const deleteMultipleProducts = async (ids: string[]): Promise<boolean> => {
+    const idSet = new Set(ids);
+    setProducts(prev => prev.filter(p => !idSet.has(p.id) && !idSet.has(p.sku)));
+    deleteMultipleFromSupabase('products', ids).catch(console.warn);
+    return true;
+  };
+
+  const importProducts = async (
+    newProducts: ProductItem[],
+    conflictResolution: 'replace' | 'skip'
+  ): Promise<{ added: number; updated: number; skipped: number }> => {
+    let added = 0;
+    let updated = 0;
+    let skipped = 0;
+    const toSave: ProductItem[] = [];
+
+    setProducts(prev => {
+      const map = new Map<string, ProductItem>();
+      prev.forEach(p => map.set((p.sku || p.id).toLowerCase().trim(), p));
+
+      newProducts.forEach(prod => {
+        const key = (prod.sku || prod.id).toLowerCase().trim();
+        if (map.has(key)) {
+          if (conflictResolution === 'replace') {
+            const current = map.get(key)!;
+            const merged: ProductItem = {
+              ...current,
+              ...prod,
+              id: current.id,
+              sku: current.sku || prod.sku,
+              updated_at: new Date().toISOString()
+            };
+            map.set(key, merged);
+            toSave.push(merged);
+            updated++;
+          } else {
+            skipped++;
+          }
+        } else {
+          const newProd: ProductItem = {
+            ...prod,
+            id: prod.id || prod.sku || `PROD-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+            sku: prod.sku || prod.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          map.set(key, newProd);
+          toSave.push(newProd);
+          added++;
+        }
+      });
+
+      return Array.from(map.values());
+    });
+
+    if (toSave.length > 0) {
+      Promise.all(toSave.slice(0, 50).map(p => saveToSupabase('products', p))).catch(console.warn);
+    }
+
+    return { added, updated, skipped };
+  };
+
+  const resetProductsToDefault = () => {
+    setProducts(INITIAL_PRODUCTS);
+    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
+  };
+
   return (
     <MallaesaContext.Provider
       value={{
@@ -2133,7 +2269,15 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isSupabaseConnected,
         syncWithSupabase,
         deleteProject,
-        deleteWorkOrder
+        deleteWorkOrder,
+        // Productos
+        products,
+        addProduct,
+        updateProduct,
+        deleteProduct,
+        deleteMultipleProducts,
+        importProducts,
+        resetProductsToDefault
       }}
     >
       {children}

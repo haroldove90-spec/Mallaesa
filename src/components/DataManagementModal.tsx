@@ -42,6 +42,7 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ isOpen
     suppliers,
     employees,
     attendanceRecords,
+    products,
     syncWithSupabase,
     isSupabaseConnected
   } = useMallaesa();
@@ -483,6 +484,7 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ isOpen
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-stone-600 font-medium">
+                  <div>• {products.length} Productos Catálogo</div>
                   <div>• {employees.length} Empleados</div>
                   <div>• {attendanceRecords.length} Asistencias</div>
                   <div>• {formalQuotes.length} Cotizaciones</div>
@@ -490,7 +492,6 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ isOpen
                   <div>• {projects.length} Proyectos</div>
                   <div>• {invoices.length} Facturas</div>
                   <div>• {suppliers.length} Proveedores</div>
-                  <div>• {requests.length} Solicitudes</div>
                 </div>
               </div>
 

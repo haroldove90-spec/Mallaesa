@@ -172,6 +172,28 @@ export function formatPayloadForSupabase(tableName: string, record: any): any {
     };
   }
 
+  if (tableName === 'products') {
+    return {
+      id: String(record.id || record.sku),
+      sku: String(record.sku || record.id || '').trim(),
+      catalog_type: String(record.catalog_type || 'otros'),
+      category: String(record.category || ''),
+      subcategory: String(record.subcategory || ''),
+      product_name: String(record.product_name || record.productName || ''),
+      specifications: String(record.specifications || ''),
+      gauge: String(record.gauge || ''),
+      dimensions: String(record.dimensions || ''),
+      unit: String(record.unit || 'Pza'),
+      price_base_sin_iva: Number(record.price_base_sin_iva ?? 0),
+      price_base_con_iva: Number(record.price_base_con_iva ?? 0),
+      price_public_sin_iva: Number(record.price_public_sin_iva ?? 0),
+      price_public_con_iva: Number(record.price_public_con_iva ?? 0),
+      notes: String(record.notes || ''),
+      raw_data: record,
+      updated_at: new Date().toISOString()
+    };
+  }
+
   return {
     id: String(record.id),
     ...record,
@@ -263,6 +285,24 @@ export async function deleteFromSupabase(tableName: string, id: string): Promise
 }
 
 /**
+ * Borrar múltiples registros de Supabase por una lista de IDs
+ */
+export async function deleteMultipleFromSupabase(tableName: string, ids: string[]): Promise<boolean> {
+  if (!ids || ids.length === 0) return true;
+  try {
+    const { error } = await supabase.from(tableName).delete().in('id', ids.map(String));
+    if (error) {
+      console.warn(`[Supabase] Error al borrar múltiples de ${tableName}:`, error.message);
+      return false;
+    }
+    return true;
+  } catch (err: any) {
+    console.warn(`[Supabase] Excepción al borrar múltiples de ${tableName}:`, err.message);
+    return false;
+  }
+}
+
+/**
  * Vaciar una tabla completa en Supabase (usado para limpiar datos de muestra)
  */
 export async function clearTableInSupabase(tableName: string): Promise<boolean> {
@@ -315,7 +355,7 @@ export async function fetchFromSupabase<T = any>(tableName: string): Promise<T[]
           email: row.email || raw.email || '',
           address: row.address || raw.address || '',
           birthDate: raw.birthDate || row.birth_date || '',
-          bloodType: raw.bloodType || raw.blood_type || 'O+',
+          bloodType: row.bloodType || raw.blood_type || 'O+',
           emergencyContact: raw.emergencyContact || row.emergency_contact || { name: '', relationship: '', phone: '' },
           jobTitle: raw.jobTitle || row.job_title || '',
           department: raw.department || row.department || 'instalacion_campo',
@@ -330,6 +370,28 @@ export async function fetchFromSupabase<T = any>(tableName: string): Promise<T[]
           password: row.password || raw.password || '',
           assignedRole: row.assigned_role || raw.assignedRole || 'operaciones',
           systemUrl: row.system_url || raw.systemUrl || 'https://mallaesa.vercel.app/'
+        };
+      }
+      if (tableName === 'products') {
+        return {
+          id: row.id,
+          sku: row.sku || row.id,
+          catalog_type: row.catalog_type || 'otros',
+          category: row.category || '',
+          subcategory: row.subcategory || '',
+          product_name: row.product_name || '',
+          specifications: row.specifications || '',
+          gauge: row.gauge || '',
+          dimensions: row.dimensions || '',
+          unit: row.unit || 'Pza',
+          price_base_sin_iva: Number(row.price_base_sin_iva ?? 0),
+          price_base_con_iva: Number(row.price_base_con_iva ?? 0),
+          price_public_sin_iva: Number(row.price_public_sin_iva ?? 0),
+          price_public_con_iva: Number(row.price_public_con_iva ?? 0),
+          notes: row.notes || '',
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+          ...(row.raw_data || {})
         };
       }
       return (row.raw_data ? { ...row.raw_data, ...row } : row);
@@ -772,6 +834,30 @@ CREATE TABLE IF NOT EXISTS public.warehouse_movements (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 19. CATÁLOGO OFICIAL DE PRODUCTOS Y PRECIOS
+CREATE TABLE IF NOT EXISTS public.products (
+    id TEXT PRIMARY KEY,
+    sku TEXT UNIQUE,
+    catalog_type TEXT,
+    category TEXT,
+    subcategory TEXT,
+    product_name TEXT,
+    specifications TEXT,
+    gauge TEXT,
+    dimensions TEXT,
+    unit TEXT DEFAULT 'Pza',
+    price_base_sin_iva NUMERIC DEFAULT 0,
+    price_base_con_iva NUMERIC DEFAULT 0,
+    price_public_sin_iva NUMERIC DEFAULT 0,
+    price_public_con_iva NUMERIC DEFAULT 0,
+    notes TEXT,
+    raw_data JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_products_sku ON public.products(sku);
+CREATE INDEX IF NOT EXISTS idx_products_catalog_type ON public.products(catalog_type);
+
 -- =====================================================================
 -- HABILITACIÓN DE PRIVILEGIOS POSTGRESQL (GRANT ALL) Y ROW LEVEL SECURITY (RLS)
 -- Resuelve: "permission denied for table ..."
@@ -803,7 +889,7 @@ BEGIN
             'formal_quotes', 'projects', 'work_orders', 'inventory', 'suppliers', 
             'purchase_orders', 'accounts_payable', 'simple_receipts', 'invoices', 
             'approvals', 'daily_work_logs', 'vehicle_logs', 'customer_service_tickets', 
-            'warehouse_movements'
+            'warehouse_movements', 'products'
         )
     LOOP
         EXECUTE format('GRANT ALL ON TABLE public.%I TO anon, authenticated, service_role;', tbl);

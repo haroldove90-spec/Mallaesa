@@ -14,6 +14,7 @@ import { AdminPortal } from './views/admin/AdminPortal';
 import { OfficialQuoteCalculatorView } from './components/OfficialQuoteCalculatorView';
 import { OfficialCatalogView } from './components/OfficialCatalogView';
 import { QuoteHistoryView } from './components/QuoteHistoryView';
+import { ProductsCatalogView } from './components/ProductsCatalogView';
 import { MallaesaChatbotWidget } from './components/MallaesaChatbotWidget';
 import { NotificationToast } from './components/NotificationToast';
 
@@ -74,10 +75,13 @@ function DashboardContent() {
             <main className="flex-1 p-3.5 sm:p-6 md:p-8 overflow-y-auto">
               {activeRole === 'cotizador' && (
                 <>
-                  {(currentModule === 'cotizador' || !['catalogo', 'historial'].includes(currentModule)) && (
+                  {(currentModule === 'cotizador' || !['productos', 'catalogo', 'historial'].includes(currentModule)) && (
                     <OfficialQuoteCalculatorView
                       onGoToHistory={() => setCurrentModule('historial')}
                     />
+                  )}
+                  {currentModule === 'productos' && (
+                    <ProductsCatalogView />
                   )}
                   {currentModule === 'catalogo' && (
                     <OfficialCatalogView

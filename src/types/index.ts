@@ -494,3 +494,25 @@ export const ROLE_DEFAULT_MODULE: Record<RoleType, string> = {
   operaciones: 'ordenes',
   administracion: 'registro_personal'
 };
+
+export type ProductCatalogType = 'importacion' | 'tuberias_laminas' | 'malla_ciclonica' | 'reja_inde' | 'otros';
+
+export interface ProductItem {
+  id: string;
+  sku: string;
+  catalog_type: ProductCatalogType;
+  category: string;
+  subcategory: string;
+  product_name: string;
+  specifications: string;
+  gauge?: string;
+  dimensions?: string;
+  unit: string;
+  price_base_sin_iva: number;
+  price_base_con_iva: number;
+  price_public_sin_iva: number;
+  price_public_con_iva: number;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
