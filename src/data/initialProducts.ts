@@ -9,5 +9,8 @@ export const CATALOG_TYPE_LABELS: Record<string, string> = {
   tuberias_laminas: 'Tuberías y Láminas',
   malla_ciclonica: 'Malla Ciclónica',
   reja_inde: 'Reja INDE y Puertas',
+  concertina_alambres: 'Concertina y Alambres',
+  accesorios_herrajes: 'Accesorios y Herrajes',
+  mallas_especiales: 'Mallas Especiales',
   otros: 'Otros Accesorios'
 };

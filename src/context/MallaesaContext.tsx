@@ -452,7 +452,14 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          if (parsed.length < INITIAL_PRODUCTS.length) {
+            const existingSkus = new Set(parsed.map((p: any) => (p.sku || p.id).toLowerCase()));
+            const missing = INITIAL_PRODUCTS.filter(p => !existingSkus.has((p.sku || p.id).toLowerCase()));
+            return [...parsed, ...missing];
+          }
+          return parsed;
+        }
       } catch (e) {
         console.warn('Error al cargar productos de almacenamiento local:', e);
       }

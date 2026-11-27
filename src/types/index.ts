@@ -495,7 +495,15 @@ export const ROLE_DEFAULT_MODULE: Record<RoleType, string> = {
   administracion: 'registro_personal'
 };
 
-export type ProductCatalogType = 'importacion' | 'tuberias_laminas' | 'malla_ciclonica' | 'reja_inde' | 'otros';
+export type ProductCatalogType =
+  | 'importacion'
+  | 'tuberias_laminas'
+  | 'malla_ciclonica'
+  | 'reja_inde'
+  | 'concertina_alambres'
+  | 'accesorios_herrajes'
+  | 'mallas_especiales'
+  | 'otros';
 
 export interface ProductItem {
   id: string;

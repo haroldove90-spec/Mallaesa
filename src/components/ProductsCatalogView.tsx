@@ -26,7 +26,16 @@ import { useMallaesa } from '../context/MallaesaContext';
 import { ProductItem, ProductCatalogType } from '../types';
 import { CATALOG_TYPE_LABELS } from '../data/initialProducts';
 
-type ActiveTab = 'todos' | 'importacion' | 'tuberias_laminas' | 'malla_ciclonica' | 'reja_inde';
+type ActiveTab =
+  | 'todos'
+  | 'importacion'
+  | 'tuberias_laminas'
+  | 'malla_ciclonica'
+  | 'reja_inde'
+  | 'concertina_alambres'
+  | 'accesorios_herrajes'
+  | 'mallas_especiales'
+  | 'otros';
 
 export const ProductsCatalogView: React.FC = () => {
   const {
@@ -125,7 +134,11 @@ export const ProductsCatalogView: React.FC = () => {
       importacion: 0,
       tuberias_laminas: 0,
       malla_ciclonica: 0,
-      reja_inde: 0
+      reja_inde: 0,
+      concertina_alambres: 0,
+      accesorios_herrajes: 0,
+      mallas_especiales: 0,
+      otros: 0
     };
     products.forEach(p => {
       if (counts[p.catalog_type] !== undefined) {
@@ -339,7 +352,10 @@ export const ProductsCatalogView: React.FC = () => {
               { id: 'importacion', label: 'Catálogo de Importación', count: tabCounts.importacion },
               { id: 'tuberias_laminas', label: 'Tuberías y Láminas', count: tabCounts.tuberias_laminas },
               { id: 'malla_ciclonica', label: 'Malla Ciclónica', count: tabCounts.malla_ciclonica },
-              { id: 'reja_inde', label: 'Reja INDE y Puertas', count: tabCounts.reja_inde }
+              { id: 'reja_inde', label: 'Reja INDE y Puertas', count: tabCounts.reja_inde },
+              { id: 'concertina_alambres', label: 'Concertina y Alambres', count: tabCounts.concertina_alambres },
+              { id: 'accesorios_herrajes', label: 'Accesorios y Herrajes', count: tabCounts.accesorios_herrajes },
+              { id: 'mallas_especiales', label: 'Mallas Especiales', count: tabCounts.mallas_especiales }
             ].map(tab => {
               const isActive = activeTab === tab.id;
               return (
@@ -1049,6 +1065,9 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 <option value="tuberias_laminas">Tuberías y Láminas</option>
                 <option value="malla_ciclonica">Malla Ciclónica</option>
                 <option value="reja_inde">Reja INDE y Puertas</option>
+                <option value="concertina_alambres">Concertina y Alambres</option>
+                <option value="accesorios_herrajes">Accesorios y Herrajes</option>
+                <option value="mallas_especiales">Mallas Especiales</option>
                 <option value="otros">Otros Accesorios</option>
               </select>
             </div>
@@ -1270,7 +1289,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose, onImport }) =>
   const parseCSVString = (csvText: string, defaultType: ProductCatalogType) => {
     setErrorMsg('');
     try {
-      const lines = csvText.split(/\r?\n/).filter(line => line.trim().length > 0);
+      const lines = csvText.split(/\r\n|\r|\n/).filter(line => line.trim().length > 0);
       if (lines.length <= 1) {
         setErrorMsg('El archivo o texto no contiene filas de datos.');
         return;
@@ -1334,8 +1353,14 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose, onImport }) =>
         const unit = idxMap.unit !== undefined ? cols[idxMap.unit] : cols[7] || 'Pza';
         const pBaseSin = idxMap.price_base_sin_iva !== undefined ? parseNumber(cols[idxMap.price_base_sin_iva]) : parseNumber(cols[8]);
         const pBaseCon = idxMap.price_base_con_iva !== undefined ? parseNumber(cols[idxMap.price_base_con_iva]) : parseNumber(cols[9]) || pBaseSin * 1.16;
-        const pPubSin = idxMap.price_public_sin_iva !== undefined ? parseNumber(cols[idxMap.price_public_sin_iva]) : parseNumber(cols[10]);
-        const pPubCon = idxMap.price_public_con_iva !== undefined ? parseNumber(cols[idxMap.price_public_con_iva]) : parseNumber(cols[11]) || pPubSin * 1.16;
+        let pPubSin = idxMap.price_public_sin_iva !== undefined ? parseNumber(cols[idxMap.price_public_sin_iva]) : parseNumber(cols[10]);
+        let pPubCon = idxMap.price_public_con_iva !== undefined ? parseNumber(cols[idxMap.price_public_con_iva]) : parseNumber(cols[11]);
+        if (pPubSin <= 0 && pBaseSin > 0) {
+          pPubSin = Number((pBaseSin * 1.25).toFixed(2));
+          pPubCon = Number((pBaseCon * 1.25).toFixed(2));
+        } else if (pPubCon <= 0 && pPubSin > 0) {
+          pPubCon = Number((pPubSin * 1.16).toFixed(2));
+        }
         const notes = idxMap.notes !== undefined ? cols[idxMap.notes] : cols[12] || '';
 
         items.push({
@@ -1371,7 +1396,13 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose, onImport }) =>
     // Auto infer catalog type from file name
     const fname = file.name.toLowerCase();
     let detectedType = targetCatalogType;
-    if (fname.includes('tuberia') || fname.includes('lamina')) {
+    if (fname.includes('concertina') || fname.includes('alambre') || fname.includes('pua')) {
+      detectedType = 'concertina_alambres';
+    } else if (fname.includes('accesorio') || fname.includes('herraje') || fname.includes('abrazadera')) {
+      detectedType = 'accesorios_herrajes';
+    } else if (fname.includes('especial') || fname.includes('ondulada') || fname.includes('criba') || fname.includes('desplegado')) {
+      detectedType = 'mallas_especiales';
+    } else if (fname.includes('tuberia') || fname.includes('lamina')) {
       detectedType = 'tuberias_laminas';
     } else if (fname.includes('ciclonica') || fname.includes('malla')) {
       detectedType = 'malla_ciclonica';
@@ -1451,6 +1482,9 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ onClose, onImport }) =>
                 <option value="tuberias_laminas">Tuberías y Láminas</option>
                 <option value="malla_ciclonica">Malla Ciclónica</option>
                 <option value="reja_inde">Reja INDE y Puertas</option>
+                <option value="concertina_alambres">Concertina y Alambres</option>
+                <option value="accesorios_herrajes">Accesorios y Herrajes</option>
+                <option value="mallas_especiales">Mallas Especiales</option>
                 <option value="otros">Otros Accesorios</option>
               </select>
             </div>
