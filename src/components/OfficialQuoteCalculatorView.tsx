@@ -139,7 +139,7 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
     ];
 
     return catalogConfigs.map(cfg => {
-      const prodsForCat = products.filter(p => p.catalog_type === cfg.type);
+      const prodsForCat = cfg.type === 'importacion' ? products : products.filter(p => p.catalog_type === cfg.type);
       const mappedProducts: OfficialProduct[] = prodsForCat.map(p => ({
         id: p.id,
         name: p.product_name,
@@ -172,7 +172,7 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
     });
   }, [products]);
 
-  // Búsqueda directa en tiempo real entre los 1,534 productos del catálogo maestro
+  // Búsqueda directa en tiempo real entre los productos del catálogo maestro
   const quickSearchResults = useMemo(() => {
     if (!catalogSearchTerm.trim() || catalogSearchTerm.trim().length < 2) return [];
     const term = catalogSearchTerm.toLowerCase().trim();
@@ -744,7 +744,7 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
       )}
 
       {/* ========================================================
-          PASO 1: LAS CATEGORÍAS DEL CATÁLOGO MAESTRO (1,534 PRODUCTOS)
+          PASO 1: LAS CATEGORÍAS DEL CATÁLOGO MAESTRO DE PRODUCTOS
          ======================================================== */}
       <div className="space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -764,7 +764,7 @@ export const OfficialQuoteCalculatorView: React.FC<OfficialQuoteCalculatorViewPr
           </span>
         </div>
 
-        {/* Buscador Rápido Directo en los 1,534 Productos del Catálogo Maestro */}
+        {/* Buscador Rápido Directo en el Catálogo Maestro */}
         <div className="bg-stone-50 border border-stone-200 rounded-2xl p-3 sm:p-4 shadow-xs">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />

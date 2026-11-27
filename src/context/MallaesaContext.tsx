@@ -254,7 +254,7 @@ const STORAGE_KEYS = {
   EMPLOYEES: 'mallaesa_employees',
   ATTENDANCE: 'mallaesa_attendance',
   WEEKLY_HOURS_LIMIT: 'mallaesa_weekly_hours_limit',
-  PRODUCTS: 'mallaesa_products_v2'
+  PRODUCTS: 'mallaesa_products_v3'
 };
 
 export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -448,27 +448,25 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const [products, setProducts] = useState<ProductItem[]>(() => {
-    // Check v2 key first, then fall back to previous v1 key
-    const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS) || localStorage.getItem('mallaesa_products_v1');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          if (parsed.length < INITIAL_PRODUCTS.length) {
-            const existingIds = new Set(parsed.map((p: any) => p.id));
-            const existingSkus = new Set(parsed.map((p: any) => (p.sku || p.id).toLowerCase()));
-            const missing = INITIAL_PRODUCTS.filter(p => !existingIds.has(p.id) && !existingSkus.has((p.sku || p.id).toLowerCase()));
-            const merged = [...parsed, ...missing];
-            localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(merged));
-            return merged;
-          }
-          return parsed;
-        }
-      } catch (e) {
-        console.warn('Error al cargar productos de almacenamiento local:', e);
-      }
-    }
     try {
+      const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length >= INITIAL_PRODUCTS.length) {
+          const mallasCount = parsed.filter((p: any) => p.catalog_type === 'mallas_especiales').length;
+          if (mallasCount >= 144) {
+            return parsed;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error al cargar productos de almacenamiento local:', e);
+    }
+    // Si la versión previa no tenía mallas especiales o era una versión anterior con tipos incorrectos,
+    // limpiamos el almacenamiento antiguo y cargamos el catálogo oficial corregido
+    try {
+      localStorage.removeItem('mallaesa_products_v1');
+      localStorage.removeItem('mallaesa_products_v2');
       localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
     } catch (_) {}
     return INITIAL_PRODUCTS;

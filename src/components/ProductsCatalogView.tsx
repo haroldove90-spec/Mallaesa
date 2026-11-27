@@ -79,7 +79,7 @@ export const ProductsCatalogView: React.FC = () => {
 
   // Filter products by tab
   const tabFilteredProducts = useMemo(() => {
-    if (activeTab === 'todos') return products;
+    if (activeTab === 'todos' || activeTab === 'importacion') return products;
     return products.filter(p => p.catalog_type === activeTab);
   }, [products, activeTab]);
 
@@ -131,7 +131,7 @@ export const ProductsCatalogView: React.FC = () => {
   const tabCounts = useMemo(() => {
     const counts: Record<string, number> = {
       todos: products.length,
-      importacion: 0,
+      importacion: products.length,
       tuberias_laminas: 0,
       malla_ciclonica: 0,
       reja_inde: 0,
@@ -336,10 +336,10 @@ export const ProductsCatalogView: React.FC = () => {
             <button
               onClick={() => setIsResetConfirmOpen(true)}
               className="inline-flex items-center gap-1.5 px-3 py-2.5 text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-xl text-xs font-medium transition"
-              title="Restaurar catálogo inicial oficial (1,534 items en 7 submódulos)"
+              title="Restaurar catálogo inicial oficial (767 items en sus submódulos)"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Restaurar Oficial (1,534)</span>
+              <span className="hidden sm:inline">Restaurar Oficial ({products.length})</span>
             </button>
           </div>
         </div>
@@ -921,7 +921,7 @@ export const ProductsCatalogView: React.FC = () => {
               <h3 className="text-base font-black text-stone-900">Restaurar Catálogo Oficial</h3>
             </div>
             <p className="text-xs text-stone-600 leading-relaxed">
-              Esto restablecerá los 1,534 productos oficiales de los 7 catálogos de Excel de Mallaesa (Importación, Tuberías y Láminas, Malla Ciclónica, Reja INDE, Concertina y Alambres, Accesorios y Herrajes, y Mallas Especiales).
+              Esto restablecerá los 767 productos oficiales distribuidos en sus respectivos submódulos (Tuberías y Láminas [64], Malla Ciclónica [308], Reja INDE [117], Concertina y Alambres [50], Accesorios y Herrajes [84], y Mallas Especiales [144]).
             </p>
             <div className="mt-6 flex justify-end gap-2.5">
               <button
