@@ -33,7 +33,8 @@ import {
   Truck,
   Building2,
   UserCheck,
-  UserPlus
+  UserPlus,
+  BookOpen
 } from 'lucide-react';
 
 export interface NavItem {
@@ -105,7 +106,7 @@ interface NavigationProps {
 }
 
 export const Navigation: React.FC<NavigationProps> = ({ currentModule, onSelectModule }) => {
-  const { activeRole, setActiveRole, approvals, requests } = useMallaesa();
+  const { activeRole, setActiveRole, approvals, requests, openUserManual } = useMallaesa();
 
   if (!activeRole) return null;
 
@@ -175,8 +176,22 @@ export const Navigation: React.FC<NavigationProps> = ({ currentModule, onSelectM
           })}
         </nav>
 
-        {/* Pie del Menú Lateral: Cambiar de Rol / Cerrar */}
-        <div className="p-4 border-t border-stone-200 bg-stone-50">
+        {/* Pie del Menú Lateral: Manual y Salir */}
+        <div className="p-4 border-t border-stone-200 bg-stone-50 space-y-2">
+          <button
+            onClick={() => openUserManual(activeRole || undefined)}
+            className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-bold text-emerald-950 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-xl transition cursor-pointer shadow-2xs"
+            title="Abrir el manual de usuario con letra grande y opción a PDF"
+          >
+            <span className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-emerald-700 shrink-0" />
+              <span>Manual de Usuario</span>
+            </span>
+            <span className="text-[10px] bg-emerald-700 text-white font-extrabold px-1.5 py-0.5 rounded">
+              PDF
+            </span>
+          </button>
+
           <button
             onClick={() => setActiveRole(null)}
             className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-stone-600 hover:text-black hover:bg-stone-200/60 rounded-lg transition"

@@ -9,7 +9,8 @@ import {
   Truck,
   Receipt,
   Calculator,
-  ArrowRight
+  ArrowRight,
+  BookOpen
 } from 'lucide-react';
 
 interface RoleOption {
@@ -69,12 +70,25 @@ interface RoleSelectorProps {
 }
 
 export const RoleSelector: React.FC<RoleSelectorProps> = ({ onBackToAdmin }) => {
-  const { setActiveRole } = useMallaesa();
+  const { setActiveRole, openUserManual } = useMallaesa();
 
   return (
     <div className="min-h-screen w-full bg-[#F8F9F8] flex flex-col items-center justify-center p-4 sm:p-6 md:p-10 relative">
-      {onBackToAdmin && (
-        <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => openUserManual()}
+          className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border border-emerald-300 rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+          title="Ver o imprimir el manual de usuario paso a paso"
+        >
+          <BookOpen className="w-3.5 h-3.5 text-emerald-700" />
+          <span>Manual de Usuario</span>
+          <span className="text-[9px] bg-emerald-700 text-white font-extrabold px-1.5 py-0.2 rounded">
+            PDF
+          </span>
+        </button>
+
+        {onBackToAdmin && (
           <button
             type="button"
             onClick={onBackToAdmin}
@@ -83,8 +97,8 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ onBackToAdmin }) => 
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>Volver a Dirección General</span>
           </button>
-        </div>
-      )}
+        )}
+      </div>
       <div className="w-full max-w-7xl mx-auto flex flex-col items-center">
         {/* UN SOLO LOGO ARRIBA DE LOS ACCESOS (Con buen tamaño y sin encapsular) */}
         <div className="mb-8 md:mb-12 flex flex-col items-center text-center animate-fade-in">

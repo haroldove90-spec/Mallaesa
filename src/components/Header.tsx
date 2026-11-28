@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useMallaesa } from '../context/MallaesaContext';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { DataManagementModal } from './DataManagementModal';
-import { Download, LogOut, Database, UserCheck, Smartphone, Shield, ChevronDown } from 'lucide-react';
+import { Download, LogOut, Database, UserCheck, Smartphone, Shield, ChevronDown, BookOpen } from 'lucide-react';
 import { RoleType } from '../types';
 
 const ROLE_LABELS: Record<string, { title: string; badge: string }> = {
@@ -37,7 +37,7 @@ const ROLE_LABELS: Record<string, { title: string; badge: string }> = {
 };
 
 export const Header: React.FC = () => {
-  const { activeRole, setActiveRole, isSupabaseConnected, currentUser, logout } = useMallaesa();
+  const { activeRole, setActiveRole, isSupabaseConnected, currentUser, logout, openUserManual } = useMallaesa();
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [showDataModal, setShowDataModal] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
@@ -122,6 +122,20 @@ export const Header: React.FC = () => {
 
             {/* Acciones del Encabezado */}
             <div className="flex items-center gap-2 sm:gap-3">
+              {/* Botón Manual de Usuario Oficial (Fácil acceso para cliente de 60-65 años) */}
+              <button
+                onClick={() => openUserManual(activeRole || undefined)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-stone-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg shadow-xs transition cursor-pointer"
+                title="Consultar manual de usuario de este rol o descargar en PDF"
+              >
+                <BookOpen className="w-4 h-4 text-emerald-700 shrink-0" />
+                <span className="font-extrabold">Manual</span>
+                <span className="hidden sm:inline font-bold text-emerald-800">de Usuario</span>
+                <span className="hidden md:inline-block text-[9px] bg-emerald-700 text-white font-black px-1.5 py-0.5 rounded uppercase">
+                  PDF
+                </span>
+              </button>
+
               {/* Botón Gestión de Datos y Supabase */}
               <button
                 onClick={() => setShowDataModal(true)}

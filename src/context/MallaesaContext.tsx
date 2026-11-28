@@ -228,6 +228,13 @@ interface MallaesaContextType {
   deleteMultipleProducts: (ids: string[]) => Promise<boolean>;
   importProducts: (newProducts: ProductItem[], conflictResolution: 'replace' | 'skip') => Promise<{ added: number; updated: number; skipped: number }>;
   resetProductsToDefault: () => void;
+
+  // Manual de Usuario accesible en cada rol
+  isUserManualOpen: boolean;
+  setIsUserManualOpen: (open: boolean) => void;
+  manualTargetRole: RoleType | null;
+  openUserManual: (role?: RoleType) => void;
+  closeUserManual: () => void;
 }
 
 const MallaesaContext = createContext<MallaesaContextType | undefined>(undefined);
@@ -271,6 +278,23 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const [currentModule, setCurrentModule] = useState<string>('inicio');
   const [preloadedQuoteDraft, setPreloadedQuoteDraft] = useState<PreloadedQuoteDraft | null>(null);
+
+  // Manual de Usuario accesible desde cualquier rol
+  const [isUserManualOpen, setIsUserManualOpen] = useState(false);
+  const [manualTargetRole, setManualTargetRole] = useState<RoleType | null>(null);
+
+  const openUserManual = (role?: RoleType) => {
+    if (role) {
+      setManualTargetRole(role);
+    } else if (activeRole) {
+      setManualTargetRole(activeRole);
+    }
+    setIsUserManualOpen(true);
+  };
+
+  const closeUserManual = () => {
+    setIsUserManualOpen(false);
+  };
 
   const [noSampleDataMode, setNoSampleDataModeState] = useState<boolean>(() => {
     return localStorage.getItem(STORAGE_KEYS.NO_SAMPLE) === 'true';
@@ -2418,7 +2442,13 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         deleteProduct,
         deleteMultipleProducts,
         importProducts,
-        resetProductsToDefault
+        resetProductsToDefault,
+        // Manual de Usuario
+        isUserManualOpen,
+        setIsUserManualOpen,
+        manualTargetRole,
+        openUserManual,
+        closeUserManual
       }}
     >
       {children}

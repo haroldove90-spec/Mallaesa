@@ -35,7 +35,8 @@ import {
   Home,
   Compass,
   FileText,
-  Sliders
+  Sliders,
+  BookOpen
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { calculateIntelligentQuote, exportQuoteToPdf, IntelligentQuoteResult } from '../../utils/quoteCalculator';
@@ -219,7 +220,7 @@ const SOLUTIONS_SEGMENTS = [
 ];
 
 export const WebsitePortal: React.FC<WebsitePortalProps> = ({ activeModule, onNavigateModule }) => {
-  const { saveIntelligentQuote, setActiveRole } = useMallaesa();
+  const { saveIntelligentQuote, setActiveRole, openUserManual } = useMallaesa();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<string>('todos');
@@ -374,6 +375,17 @@ export const WebsitePortal: React.FC<WebsitePortalProps> = ({ activeModule, onNa
             >
               <MessageCircle className="w-3 h-3" /> WhatsApp Ventas
             </a>
+            {/* Botón Manual de Usuario */}
+            <button
+              onClick={() => openUserManual('pagina_web')}
+              className="flex items-center gap-1 px-2.5 py-0.5 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 rounded text-[11px] font-bold border border-emerald-700/60 transition cursor-pointer"
+              title="Manual de Usuario del Sistema"
+            >
+              <BookOpen className="w-3 h-3 text-emerald-400" />
+              <span>Manual</span>
+              <span className="text-[9px] bg-emerald-600 text-white px-1 rounded font-black">PDF</span>
+            </button>
+
             {/* Botón Acceso a Roles del Sistema */}
             <button
               onClick={() => setActiveRole(null)}

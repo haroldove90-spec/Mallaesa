@@ -17,6 +17,7 @@ import { QuoteHistoryView } from './components/QuoteHistoryView';
 import { ProductsCatalogView } from './components/ProductsCatalogView';
 import { MallaesaChatbotWidget } from './components/MallaesaChatbotWidget';
 import { NotificationToast } from './components/NotificationToast';
+import { UserManualModal } from './components/UserManualModal';
 
 import { ROLE_DEFAULT_MODULE } from './types';
 import { ROLE_MODULES } from './components/Navigation';
@@ -135,6 +136,9 @@ function DashboardContent() {
 
       {/* Sistema de Notificaciones Flotantes Toast (Seguro para iframes) */}
       <NotificationToast />
+
+      {/* Manual de Usuario Integral para Cada Rol con Descarga en PDF */}
+      <UserManualModal />
     </>
   );
 }
