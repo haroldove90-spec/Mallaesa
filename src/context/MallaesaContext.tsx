@@ -589,7 +589,10 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         remoteDailyLogs,
         remoteVehicleLogs,
         remoteRequests,
-        remoteProducts
+        remoteProducts,
+        remoteInventory,
+        remoteMovements,
+        remoteTickets
       ] = await Promise.all([
         fetchFromSupabase<Employee>('employees'),
         fetchFromSupabase<AttendanceRecord>('attendance_records'),
@@ -605,7 +608,10 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         fetchFromSupabase<DailyWorkLog>('daily_work_logs'),
         fetchFromSupabase<VehicleLog>('vehicle_logs'),
         fetchFromSupabase<QuoteRequest>('quote_requests'),
-        fetchFromSupabase<ProductItem>('products')
+        fetchFromSupabase<ProductItem>('products'),
+        fetchFromSupabase<InventoryItem>('inventory'),
+        fetchFromSupabase<WarehouseMovement>('warehouse_movements'),
+        fetchFromSupabase<CustomerServiceTicket>('customer_service_tickets')
       ]);
 
       if (remoteEmployees !== null) {
@@ -698,6 +704,15 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       if (remoteProducts !== null && remoteProducts.length > 0) {
         setProducts(remoteProducts);
+      }
+      if (remoteInventory !== null && (remoteInventory.length > 0 || isSampleCleared)) {
+        setInventory(remoteInventory);
+      }
+      if (remoteMovements !== null && (remoteMovements.length > 0 || isSampleCleared)) {
+        setWarehouseMovements(remoteMovements);
+      }
+      if (remoteTickets !== null && (remoteTickets.length > 0 || isSampleCleared)) {
+        setCustomerServiceTickets(remoteTickets);
       }
 
       return {
@@ -1262,7 +1277,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           const updated = {
             ...p,
             quoteId,
-            phase: 2,
+            phase: 2 as const,
             phaseName: 'Fase 2: Cotización Generada',
             status: 'cotizacion_enviada' as const,
             totalAmount: total,
@@ -1350,7 +1365,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (p.folio === quote.folio) {
           const updated = {
             ...p,
-            phase: 3,
+            phase: 3 as const,
             phaseName: 'Fase 3: Aprobada - Esperando Anticipo 50%',
             status: 'esperando_anticipo' as const,
             updatedAt: now
@@ -1398,7 +1413,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             advancePaid: true,
             advanceDate: now,
             advanceReceipt: receiptFolio || `SPEI-${Date.now()}`,
-            phase: 4,
+            phase: 4 as const,
             phaseName: 'Fase 4: Anticipo Confirmado - Programación de OT',
             status: 'anticipo_confirmado' as const,
             updatedAt: now
@@ -1558,7 +1573,7 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (p.id === ot.projectId) {
           const updated = {
             ...p,
-            phase: 5,
+            phase: 5 as const,
             phaseName: 'Fase 5: Cierre & Liquidación Pendiente',
             status: 'esperando_saldo' as const,
             warrantyFolio: warrantyNum,
@@ -2292,7 +2307,13 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
 
     if (toSave.length > 0) {
-      Promise.all(toSave.slice(0, 50).map(p => saveToSupabase('products', p))).catch(console.warn);
+      (async () => {
+        const chunkSize = 50;
+        for (let i = 0; i < toSave.length; i += chunkSize) {
+          const chunk = toSave.slice(i, i + chunkSize);
+          await Promise.all(chunk.map(p => saveToSupabase('products', p)));
+        }
+      })().catch(console.warn);
     }
 
     return { added, updated, skipped };
@@ -2301,6 +2322,13 @@ export const MallaesaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const resetProductsToDefault = () => {
     setProducts(INITIAL_PRODUCTS);
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
+    (async () => {
+      const chunkSize = 50;
+      for (let i = 0; i < INITIAL_PRODUCTS.length; i += chunkSize) {
+        const chunk = INITIAL_PRODUCTS.slice(i, i + chunkSize);
+        await Promise.all(chunk.map(p => saveToSupabase('products', p)));
+      }
+    })().catch(console.warn);
   };
 
   return (
