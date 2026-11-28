@@ -16,8 +16,47 @@ import {
   MapPin,
   CreditCard,
   Building,
-  ShieldCheck
+  ShieldCheck,
+  Globe,
+  MessageCircle,
+  ExternalLink
 } from 'lucide-react';
+
+export const MALLAESA_BRANCHES = [
+  {
+    id: 'slp',
+    name: 'Sucursal San Luis Potosí',
+    fullName: 'San Luis Potosí, San Luis Potosí',
+    address: 'Fidel Briano 110, Col. Morales Campestre, C.P. 78154',
+    phone: '4448337481',
+    phoneFormatted: '(444) 833-7481',
+    whatsapp: '4443339226',
+    whatsappFormatted: '(444) 333-9226',
+    whatsappUrl: 'https://wa.me/524443339226?text=Hola,%20me%20comunico%20desde%20el%20recibo%20de%20MALLAESA'
+  },
+  {
+    id: 'leon',
+    name: 'Sucursal León de los Aldama',
+    fullName: 'León de los Aldama, Guanajuato',
+    address: 'Blvd. P. de la Presa #825, Col. Valle Hermoso, C.P. 37108',
+    phone: null,
+    phoneFormatted: null,
+    whatsapp: '4611718778',
+    whatsappFormatted: '(461) 171-8778',
+    whatsappUrl: 'https://wa.me/524611718778?text=Hola,%20me%20comunico%20desde%20el%20recibo%20de%20MALLAESA'
+  },
+  {
+    id: 'mty',
+    name: 'Sucursal Monterrey',
+    fullName: 'Monterrey, Nuevo León',
+    address: 'Aarón Sáenz Garza #1900, Col. Santa María, C.P. 64650',
+    phone: null,
+    phoneFormatted: null,
+    whatsapp: '8134060349',
+    whatsappFormatted: '(81) 3406-0349',
+    whatsappUrl: 'https://wa.me/528134060349?text=Hola,%20me%20comunico%20desde%20el%20recibo%20de%20MALLAESA'
+  }
+];
 
 export const SimpleReceiptsView: React.FC = () => {
   const {
@@ -33,6 +72,7 @@ export const SimpleReceiptsView: React.FC = () => {
 
   // Form states for new receipt
   const [selectedProjectId, setSelectedProjectId] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState<string>('Sucursal San Luis Potosí');
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [clientAddress, setClientAddress] = useState('');
@@ -84,6 +124,7 @@ export const SimpleReceiptsView: React.FC = () => {
       reference: reference || `REF-${Math.floor(100000 + Math.random() * 900000)}`,
       date: today,
       issuedBy: 'Administración MALLAESA (Caja General)',
+      branch: selectedBranch,
       notes
     });
 
@@ -168,6 +209,83 @@ export const SimpleReceiptsView: React.FC = () => {
         </div>
       </div>
 
+      {/* Directorio Oficial de Sucursales MALLAESA */}
+      <div className="bg-white border border-stone-200 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-stone-100 rounded-xl text-black">
+              <Building className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <h2 className="text-sm sm:text-base font-bold text-black flex items-center gap-2">
+                Directorio Oficial de Sucursales MALLAESA
+                <span className="text-[10px] font-bold px-2.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full">
+                  3 Ubicaciones Oficiales
+                </span>
+              </h2>
+              <p className="text-xs text-stone-500">
+                Domicilios, líneas de atención y números de WhatsApp incorporados en todos los comprobantes emitidos.
+              </p>
+            </div>
+          </div>
+          <a
+            href="https://www.mallaesa.com"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-black bg-stone-50 hover:bg-stone-100 border border-stone-200 px-3.5 py-2 rounded-xl transition self-start sm:self-auto"
+          >
+            <Globe className="w-3.5 h-3.5 text-emerald-600" />
+            <span>www.mallaesa.com</span>
+            <ExternalLink className="w-3 h-3 text-stone-400" />
+          </a>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+          {MALLAESA_BRANCHES.map(branch => (
+            <div
+              key={branch.id}
+              className="bg-stone-50/70 border border-stone-200 rounded-xl p-4 flex flex-col justify-between hover:border-black/30 transition group"
+            >
+              <div>
+                <div className="flex items-start justify-between gap-1 mb-1.5">
+                  <span className="text-xs font-black text-black group-hover:text-emerald-700 transition">
+                    {branch.name}
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-white border border-stone-200 text-stone-600 rounded">
+                    {branch.fullName.split(',')[0]}
+                  </span>
+                </div>
+                <p className="text-xs text-stone-600 flex items-start gap-1.5 leading-snug">
+                  <MapPin className="w-3.5 h-3.5 text-stone-500 shrink-0 mt-0.5" />
+                  <span>{branch.address}</span>
+                </p>
+              </div>
+
+              <div className="mt-3 pt-2.5 border-t border-stone-200/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+                {branch.phone && (
+                  <a
+                    href={`tel:${branch.phone}`}
+                    className="inline-flex items-center gap-1 text-stone-700 font-semibold hover:text-black transition"
+                  >
+                    <Phone className="w-3 h-3 text-stone-500" />
+                    <span>Tel: {branch.phoneFormatted}</span>
+                  </a>
+                )}
+                <a
+                  href={branch.whatsappUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-emerald-700 font-bold hover:underline transition ml-auto"
+                >
+                  <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>WhatsApp: {branch.whatsappFormatted}</span>
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Barra de Filtros */}
       <div className="bg-white border border-stone-200 rounded-xl p-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="relative w-full sm:w-80">
@@ -207,9 +325,17 @@ export const SimpleReceiptsView: React.FC = () => {
           >
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-stone-100">
-                <span className="font-mono text-xs font-bold px-2 py-0.5 bg-stone-100 text-black rounded border border-stone-200">
-                  {rec.folio}
-                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-mono text-xs font-bold px-2 py-0.5 bg-stone-100 text-black rounded border border-stone-200">
+                    {rec.folio}
+                  </span>
+                  {rec.branch && (
+                    <span className="text-[10px] font-semibold text-stone-600 bg-stone-50 border border-stone-200 px-2 py-0.5 rounded flex items-center gap-1">
+                      <Building className="w-2.5 h-2.5 text-stone-500" />
+                      {rec.branch}
+                    </span>
+                  )}
+                </div>
                 <span
                   className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
                     rec.paymentType === 'liquidacion_total'
@@ -296,23 +422,50 @@ export const SimpleReceiptsView: React.FC = () => {
             </div>
 
             <form onSubmit={handleCreateReceipt} className="space-y-3 text-xs">
-              {projects.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-stone-700 mb-1">Vincular Proyecto de Obra (Opcional):</label>
+                  <label className="block font-bold text-stone-700 mb-1 flex items-center gap-1">
+                    <Building className="w-3.5 h-3.5 text-stone-600" />
+                    Sucursal Emisora:
+                  </label>
                   <select
-                    value={selectedProjectId}
-                    onChange={e => handleSelectProject(e.target.value)}
+                    value={selectedBranch}
+                    onChange={e => setSelectedBranch(e.target.value)}
                     className="w-full p-2 bg-stone-50 border border-stone-300 rounded-lg font-semibold"
                   >
-                    <option value="">Seleccionar de lista de proyectos...</option>
-                    {projects.map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.folio} - {p.clientName} (${p.totalAmount.toLocaleString('es-MX')})
+                    {MALLAESA_BRANCHES.map(b => (
+                      <option key={b.id} value={b.name}>
+                        {b.name} ({b.fullName.split(',')[0]})
                       </option>
                     ))}
                   </select>
                 </div>
-              )}
+
+                {projects.length > 0 ? (
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">Vincular Proyecto (Opcional):</label>
+                    <select
+                      value={selectedProjectId}
+                      onChange={e => handleSelectProject(e.target.value)}
+                      className="w-full p-2 bg-stone-50 border border-stone-300 rounded-lg font-semibold"
+                    >
+                      <option value="">Seleccionar proyecto...</option>
+                      {projects.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.folio} - {p.clientName} (${p.totalAmount.toLocaleString('es-MX')})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">Empresa:</label>
+                    <div className="p-2 bg-stone-100 rounded-lg text-stone-600 font-semibold">
+                      MALLAESA Seguridad Perimetral
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -448,8 +601,8 @@ export const SimpleReceiptsView: React.FC = () => {
 
       {/* Modal / Vista Formal del Recibo para Imprimir */}
       {selectedReceipt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 sm:p-8 space-y-6 border border-stone-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto print:p-0 print:bg-white print:fixed print:inset-0">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 space-y-5 border border-stone-300 print:shadow-none print:border-none print:p-6 print:max-w-none">
             {/* Membrete Oficial Mallaesa */}
             <div className="flex justify-between items-start border-b-2 border-black pb-4">
               <div>
@@ -458,11 +611,11 @@ export const SimpleReceiptsView: React.FC = () => {
                   alt="MALLAESA"
                   className="h-10 w-auto object-contain mb-1"
                 />
-                <p className="text-[10px] text-stone-500 font-semibold uppercase tracking-wider">
+                <p className="text-[11px] text-stone-800 font-bold uppercase tracking-wider">
                   Mallaesa S.A. de C.V. • Seguridad Perimetral & Cercos
                 </p>
-                <p className="text-[10px] text-stone-400">
-                  Monterrey, N.L. • Tel: (81) 8300-0000 • www.mallaesa.com
+                <p className="text-[10px] text-stone-500 font-medium">
+                  {selectedReceipt.branch ? `${selectedReceipt.branch} • ` : ''}Sitio Web: www.mallaesa.com
                 </p>
               </div>
 
@@ -474,6 +627,11 @@ export const SimpleReceiptsView: React.FC = () => {
                   {selectedReceipt.folio}
                 </h3>
                 <p className="text-xs text-stone-500">{selectedReceipt.date}</p>
+                {selectedReceipt.branch && (
+                  <span className="inline-block mt-1 text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                    {selectedReceipt.branch}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -486,23 +644,30 @@ export const SimpleReceiptsView: React.FC = () => {
               {selectedReceipt.clientPhone && (
                 <div className="flex justify-between">
                   <span className="text-stone-500">Teléfono:</span>
-                  <span className="text-black">{selectedReceipt.clientPhone}</span>
+                  <span className="text-black font-semibold">{selectedReceipt.clientPhone}</span>
                 </div>
               )}
               {selectedReceipt.clientAddress && (
                 <div className="flex justify-between">
                   <span className="text-stone-500">Ubicación Obra:</span>
-                  <span className="text-black truncate max-w-[280px]">{selectedReceipt.clientAddress}</span>
+                  <span className="text-black truncate max-w-[340px]">{selectedReceipt.clientAddress}</span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span className="text-stone-500">Por Concepto de:</span>
-                <span className="font-bold text-black text-right max-w-[320px]">{selectedReceipt.concept}</span>
+                <span className="font-bold text-black text-right max-w-[340px]">{selectedReceipt.concept}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-stone-500">Forma y Referencia:</span>
-                <span className="font-mono text-black">{selectedReceipt.paymentMethod} ({selectedReceipt.reference})</span>
+                <span className="font-mono text-black font-semibold">
+                  {selectedReceipt.paymentMethod} {selectedReceipt.reference ? `(${selectedReceipt.reference})` : ''}
+                </span>
               </div>
+              {selectedReceipt.notes && (
+                <div className="pt-2 border-t border-stone-200 text-[11px] text-stone-500 italic">
+                  Nota: {selectedReceipt.notes}
+                </div>
+              )}
             </div>
 
             {/* Desglose de Importes */}
@@ -516,26 +681,66 @@ export const SimpleReceiptsView: React.FC = () => {
                 <span>${selectedReceipt.amountPaid.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN</span>
               </div>
               <div className="flex justify-between text-xs font-bold text-amber-700 pt-1">
-                <span>Saldo Pendiente:</span>
+                <span>Saldo Pendiente por Liquidar:</span>
                 <span>${selectedReceipt.remainingBalance.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN</span>
               </div>
             </div>
 
             {/* Firmas de conformidad */}
-            <div className="grid grid-cols-2 gap-8 pt-4 border-t border-stone-200 text-center text-[10px]">
+            <div className="grid grid-cols-2 gap-8 pt-3 border-t border-stone-200 text-center text-[10px]">
               <div>
-                <div className="border-b border-stone-400 h-10 mb-1"></div>
+                <div className="border-b border-stone-400 h-9 mb-1"></div>
                 <span className="font-bold text-stone-700 block">{selectedReceipt.issuedBy}</span>
                 <span className="text-stone-400">Por MALLAESA S.A. DE C.V.</span>
               </div>
               <div>
-                <div className="border-b border-stone-400 h-10 mb-1"></div>
+                <div className="border-b border-stone-400 h-9 mb-1"></div>
                 <span className="font-bold text-stone-700 block">{selectedReceipt.clientName}</span>
                 <span className="text-stone-400">Firma del Cliente Receptor</span>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-stone-200">
+            {/* Directorio Oficial de Sucursales en el Recibo */}
+            <div className="pt-3 border-t-2 border-stone-200 bg-stone-50 rounded-xl p-3 text-[10px] space-y-2">
+              <div className="flex items-center justify-between border-b border-stone-200/80 pb-1.5">
+                <span className="font-black uppercase tracking-wider text-stone-800 flex items-center gap-1.5">
+                  <Building className="w-3.5 h-3.5 text-stone-700" />
+                  Directorio Oficial de Sucursales MALLAESA
+                </span>
+                <a
+                  href="https://www.mallaesa.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-bold text-emerald-700 hover:underline flex items-center gap-1"
+                >
+                  <Globe className="w-3 h-3" />
+                  www.mallaesa.com
+                </a>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-stone-600">
+                <div className="border-l-2 border-emerald-600 pl-2">
+                  <p className="font-bold text-black">San Luis Potosí, S.L.P.</p>
+                  <p className="text-[9px] leading-tight text-stone-600">Fidel Briano 110, Morales Campestre, C.P. 78154</p>
+                  <p className="text-[9px] text-stone-700 font-semibold mt-0.5">Tel: 4448337481</p>
+                  <p className="text-[9px] text-emerald-700 font-semibold">WhatsApp: 4443339226</p>
+                </div>
+
+                <div className="border-l-2 border-emerald-600 pl-2">
+                  <p className="font-bold text-black">Sucursal León de los Aldama, Gto.</p>
+                  <p className="text-[9px] leading-tight text-stone-600">Blvd. P. de la Presa #825, Valle Hermoso, C.P. 37108</p>
+                  <p className="text-[9px] text-emerald-700 font-semibold mt-0.5">WhatsApp: 4611718778</p>
+                </div>
+
+                <div className="border-l-2 border-emerald-600 pl-2">
+                  <p className="font-bold text-black">Sucursal Monterrey, N.L.</p>
+                  <p className="text-[9px] leading-tight text-stone-600">Aarón Sáenz Garza #1900, Santa María, C.P. 64650</p>
+                  <p className="text-[9px] text-emerald-700 font-semibold mt-0.5">WhatsApp: 8134060349</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-stone-200 print:hidden">
               <button
                 onClick={() => window.print()}
                 className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer"

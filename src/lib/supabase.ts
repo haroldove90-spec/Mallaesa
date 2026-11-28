@@ -390,7 +390,7 @@ export function formatPayloadForSupabase(tableName: string, record: any): any {
       folio: record.folio || record.id || '',
       client_name: record.clientName || record.client_name || '',
       concept: record.concept || '',
-      amount: Number(record.amount ?? 0),
+      amount: Number(record.amountPaid ?? record.amount ?? 0),
       payment_method: record.paymentMethod || record.payment_method || 'Efectivo',
       notes: record.notes || '',
       raw_data: record,

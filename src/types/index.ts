@@ -302,6 +302,7 @@ export interface SimpleReceipt {
   reference: string;
   date: string;
   issuedBy: string;
+  branch?: string;
   notes?: string;
 }
 
